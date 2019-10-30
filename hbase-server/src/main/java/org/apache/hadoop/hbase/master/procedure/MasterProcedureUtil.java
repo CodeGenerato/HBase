@@ -34,6 +34,10 @@ import org.apache.yetus.audience.InterfaceStability;
 
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.UserInformation;
 
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+
+
 @InterfaceAudience.Private
 @InterfaceStability.Evolving
 public final class MasterProcedureUtil {
@@ -104,6 +108,9 @@ public final class MasterProcedureUtil {
 
     protected long submitProcedure(final Procedure<MasterProcedureEnv> proc) {
       assert procId == null : "submitProcedure() was already called, running procId=" + procId;
+      //XTRACE set baggage
+      if(proc!=null)    proc.bag = Baggage.fork();
+
       procId = getProcedureExecutor().submitProcedure(proc, nonceKey);
       return procId;
     }

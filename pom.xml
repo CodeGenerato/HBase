@@ -768,6 +768,44 @@
             </lifecycleMappingMetadata>
           </configuration>
         </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>aspectj-maven-plugin</artifactId>
+          <version>1.8</version>
+          <configuration>
+            <aspectLibraries>
+              <aspectLibrary>
+                <groupId>edu.brown.cs.systems</groupId>
+                <artifactId>tracingplane-aspects</artifactId>
+              </aspectLibrary>
+              <aspectLibrary>
+                <groupId>edu.brown.cs.systems</groupId>
+                <artifactId>xtrace-aspects</artifactId>
+              </aspectLibrary>
+
+            </aspectLibraries>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>compile</goal>
+              </goals>
+              <configuration>
+                <source>1.7</source>
+                <target>1.7</target>
+                <complianceLevel>1.7</complianceLevel>
+                <Xjoinpoints>synchronization</Xjoinpoints>
+                <showWeaveInfo>false</showWeaveInfo>
+                <verbose>false</verbose>
+                <Xlint>
+                  unmatchedSuperTypeInCall=ignore,adviceDidNotMatch=ignore,typeNotExposedToWeaver=ignore,uncheckedAdviceConversion=ignore,invalidAbsoluteTypeName=ignore
+                </Xlint>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
         <plugin>
           <!-- excludes are inherited -->
           <groupId>org.apache.rat</groupId>
@@ -1504,10 +1542,16 @@
     <!-- TODO HBASE-15041 clean up our javadocs so jdk8 linter can be used.
          property as of javadoc-plugin 3.0.0 -->
     <doclint>none</doclint>
+    <tracingplane.version>4.0</tracingplane.version>
   </properties>
   <!-- Sorted by groups of dependencies then groupId and artifactId -->
+
+
   <dependencyManagement>
     <dependencies>
+
+
+
       <!--
       Note: There are a few exclusions to prevent duplicate code in different jars to be included:
           org.mortbay.jetty:servlet-api, javax.servlet:servlet-api: These are excluded because they are
@@ -2175,7 +2219,39 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
-    </dependency>
+          </dependency>
+
+      <dependency>
+        <groupId>org.aspectj</groupId>
+        <artifactId>aspectjrt</artifactId>
+        <version>1.8.7</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.brown.cs.systems</groupId>
+        <artifactId>tracingplane-common</artifactId>
+        <version>${tracingplane.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.brown.cs.systems</groupId>
+        <artifactId>xtrace-common</artifactId>
+        <version>${tracingplane.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.brown.cs.systems</groupId>
+        <artifactId>xtrace-client</artifactId>
+        <version>${tracingplane.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.brown.cs.systems</groupId>
+        <artifactId>tracingplane-aspects</artifactId>
+        <version>${tracingplane.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.brown.cs.systems</groupId>
+        <artifactId>xtrace-aspects</artifactId>
+        <version>${tracingplane.version}</version>
+      </dependency>
+
   </dependencies>
 
   <!--

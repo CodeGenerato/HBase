@@ -38,6 +38,12 @@ import org.apache.hbase.thirdparty.com.google.common.annotations.VisibleForTesti
 
 import org.apache.hadoop.hbase.shaded.protobuf.generated.ProcedureProtos.ProcedureState;
 
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
+
+
 /**
  * Base Procedure class responsible for Procedure Metadata; e.g. state, submittedTime, lastUpdate,
  * stack-indexes, etc.
@@ -120,6 +126,9 @@ public abstract class Procedure<TEnvironment> implements Comparable<Procedure<TE
     LOCK_YIELD_WAIT,     // Lock not acquired, framework needs to yield
     LOCK_EVENT_WAIT,     // Lock not acquired, an event will yield the procedure
   }
+
+  // XTRACE
+  public DetachedBaggage bag = null;
 
   // Unchanged after initialization
   private NonceKey nonceKey = null;

@@ -35,7 +35,7 @@
       <maven.test.skip>true</maven.test.skip>
       <!-- Don't make a source-jar -->
       <source.skip>true</source.skip>
-      <license.bundles.dependencies>true</license.bundles.dependencies>
+      <license.bundles.dependencies>false</license.bundles.dependencies>
       <shaded.prefix>org.apache.hadoop.hbase.shaded</shaded.prefix>
     </properties>
     <modules>

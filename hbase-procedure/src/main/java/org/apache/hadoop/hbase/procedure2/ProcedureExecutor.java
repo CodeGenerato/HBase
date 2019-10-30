@@ -61,6 +61,11 @@ import org.apache.hbase.thirdparty.com.google.common.util.concurrent.ThreadFacto
 
 import org.apache.hadoop.hbase.shaded.protobuf.generated.ProcedureProtos.ProcedureState;
 
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
+
 /**
  * Thread Pool that executes the submitted procedures.
  * The executor has a ProcedureStore associated.
@@ -2023,11 +2028,14 @@ public class ProcedureExecutor<TEnvironment> {
       long lastUpdate = EnvironmentEdgeManager.currentTime();
       try {
         while (isRunning() && keepAlive(lastUpdate)) {
+         // XTRACE : Thread is polling a procedure which is triggered by a RPC, close gap here
           Procedure<TEnvironment> proc = scheduler
               .poll(onlyPollUrgent, keepAliveTime, TimeUnit.MILLISECONDS);
           if (proc == null) {
             continue;
           }
+          Baggage.start(proc.bag);
+          XTrace.getDefaultLogger().log(proc.toString());
           this.activeProcedure = proc;
           int activeCount = activeExecutorCount.incrementAndGet();
           int runningCount = store.setRunningProcedureCount(activeCount);

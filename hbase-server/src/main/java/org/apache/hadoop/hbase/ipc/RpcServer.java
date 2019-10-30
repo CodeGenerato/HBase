@@ -78,6 +78,12 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.ConnectionHea
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.XTraceSettings;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
+import edu.brown.cs.systems.xtrace.logging.XTraceLoggingLevel;
+
+
 /**
  * An RPC server that hosts protobuf described Services.
  *
@@ -400,7 +406,15 @@ public abstract class RpcServer implements RpcServerInterface,
   public Pair<Message, CellScanner> call(RpcCall call,
       MonitoredRPCHandler status) throws IOException {
     try {
+
       MethodDescriptor md = call.getMethod();
+
+      XTrace.startTask(true);
+      XTrace.setLoggingLevel(XTraceLoggingLevel.DEBUG);
+      XTrace.getDefaultLogger().tag("RPC call received", md.getName());
+      XTrace.getDefaultLogger().log(call.toString());
+
+
       Message param = call.getParam();
       status.setRPC(md.getName(), new Object[]{param},
         call.getReceiveTime());

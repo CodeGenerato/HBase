@@ -33,7 +33,7 @@
     </description>
   <packaging>pom</packaging>
   <properties>
-    <license.bundles.dependencies>true</license.bundles.dependencies>
+    <license.bundles.dependencies>false</license.bundles.dependencies>
   </properties>
   <build>
     <plugins>
