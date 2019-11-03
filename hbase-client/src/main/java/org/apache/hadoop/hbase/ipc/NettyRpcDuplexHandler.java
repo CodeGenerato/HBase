@@ -47,6 +47,12 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.ResponseHeade
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.ipc.RemoteException;
 
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
+
 /**
  * The netty rpc handler.
  * @since 2.0.0
@@ -77,6 +83,9 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
 
   private void writeRequest(ChannelHandlerContext ctx, Call call, ChannelPromise promise)
       throws IOException {
+
+    if(call.bag!=null) Baggage.start(call.bag);
+
     id2Call.put(call.id, call);
     ByteBuf cellBlock = cellBlockBuilder.buildCellBlock(codec, compressor, call.cells, ctx.alloc());
     CellBlockMeta cellBlockMeta;
@@ -87,7 +96,9 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
     } else {
       cellBlockMeta = null;
     }
+    XTrace.getDefaultLogger().log("Building Header");
     RequestHeader requestHeader = IPCUtil.buildRequestHeader(call, cellBlockMeta);
+
     int sizeWithoutCellBlock = IPCUtil.getTotalSizeWhenWrittenDelimited(requestHeader, call.param);
     int totalSize = cellBlock != null ? sizeWithoutCellBlock + cellBlock.writerIndex()
         : sizeWithoutCellBlock;
@@ -110,6 +121,8 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
         ctx.write(buf, promise);
       }
     }
+    // TODO XTRACE check if this is ok an do finally
+    Baggage.discard();
   }
 
   @Override
@@ -126,6 +139,11 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
     int totalSize = buf.readInt();
     ByteBufInputStream in = new ByteBufInputStream(buf);
     ResponseHeader responseHeader = ResponseHeader.parseDelimitedFrom(in);
+
+    // XTRACE
+    if(responseHeader.getTraceBaggage()!=null) Baggage.start(responseHeader.getTraceBaggage().toByteArray());
+    XTrace.getDefaultLogger().log("response header read: "+responseHeader.toString());
+
     int id = responseHeader.getCallId();
     if (LOG.isTraceEnabled()) {
       LOG.trace("got response header " + TextFormat.shortDebugString(responseHeader)

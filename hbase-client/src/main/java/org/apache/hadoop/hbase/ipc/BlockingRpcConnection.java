@@ -24,14 +24,7 @@ import static org.apache.hadoop.hbase.ipc.IPCUtil.isFatalConnectionException;
 import static org.apache.hadoop.hbase.ipc.IPCUtil.setCancelled;
 import static org.apache.hadoop.hbase.ipc.IPCUtil.write;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InterruptedIOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -48,6 +41,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.CellScanner;
 import org.apache.hadoop.hbase.DoNotRetryIOException;
 import org.apache.hadoop.hbase.exceptions.ConnectionClosingException;
+import org.apache.hadoop.hbase.exceptions.IllegalArgumentIOException;
 import org.apache.hadoop.hbase.io.ByteArrayOutputStream;
 import org.apache.hadoop.hbase.ipc.HBaseRpcController.CancellationCallback;
 import org.apache.hadoop.hbase.log.HBaseMarkers;
@@ -79,7 +73,13 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.ExceptionResp
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.RequestHeader;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.ResponseHeader;
 
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+
 /**
+ *
  * Thread that reads responses and notifies callers. Each connection owns a socket connected to a
  * remote address. Calls are multiplexed through this socket: responses may be delivered out of
  * order.
@@ -152,6 +152,9 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
         throw new IOException("Can't add the call " + call.id
             + " to the write queue. callsToWrite.size()=" + callsToWrite.size());
       }
+
+      XTrace.getDefaultLogger().log("Enqueue RPC call for sending: "+call);
+      call.bag=Baggage.fork();
       callsToWrite.offer(call);
       BlockingRpcConnection.this.notifyAll();
     }
@@ -185,6 +188,8 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
             continue;
           }
           Call call = callsToWrite.poll();
+          Baggage.start(call.bag);
+          // TODO XTRACE discarding not needed but nice
           if (call.isDone()) {
             continue;
           }
@@ -610,6 +615,7 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
       } else {
         cellBlockMeta = null;
       }
+      XTrace.getDefaultLogger().log("Prepare Package for RPC Call: "+call);
       RequestHeader requestHeader = buildRequestHeader(call, cellBlockMeta);
 
       setupIOstreams();
@@ -653,8 +659,12 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
       // Total size of the response. Unused. But have to read it in anyways.
       int totalSize = in.readInt();
 
+
       // Read the header
       ResponseHeader responseHeader = ResponseHeader.parseDelimitedFrom(in);
+
+      // XTRACE
+      if(responseHeader.getTraceBaggage()!=null) Baggage.start(responseHeader.getTraceBaggage().toByteArray());
       int id = responseHeader.getCallId();
       call = calls.remove(id); // call.done have to be set before leaving this method
       expectedCall = (call != null && !call.isDone());
@@ -701,6 +711,7 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
           cellBlockScanner = this.rpcClient.cellBlockBuilder.createCellScanner(this.codec,
             this.compressor, cellBlock);
         }
+        XTrace.getDefaultLogger().log("Read response and put it in call: "+call);
         call.setResponse(value, cellBlockScanner);
         call.callStats.setResponseSizeBytes(totalSize);
         call.callStats
@@ -776,6 +787,9 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
   @Override
   public synchronized void sendRequest(final Call call, HBaseRpcController pcrc)
       throws IOException {
+
+    XTrace.getDefaultLogger().log("sendRequest in: "+this.getClass());
+
     pcrc.notifyOnCancel(new RpcCallback<Object>() {
 
       @Override

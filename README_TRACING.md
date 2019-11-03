@@ -10,5 +10,8 @@ does currently not work.
 
 # List of system boundaries and baggage propagation:
 
+* Client sends request
+NettyRPCConnection -> NettyRPCDuplexHandler -> (network) -> RPCServer
+
 * HMaster receives and processes request
-RPCServer -> MasterProcedureUtil(emb bag) -> ProcedureExecuter(start bag)
+RPCServer -> MasterProcedureUtil -> ProcedureExecuter

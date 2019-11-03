@@ -1711,6 +1711,7 @@ public class ProcedureExecutor<TEnvironment> {
     Preconditions.checkArgument(procedure.getState() == ProcedureState.RUNNABLE,
         "NOT RUNNABLE! " + procedure.toString());
 
+    XTrace.getDefaultLogger().log("Precdure is executed:"+ procedure.getProcName());
     // Procedures can suspend themselves. They skip out by throwing a ProcedureSuspendedException.
     // The exception is caught below and then we hurry to the exit without disturbing state. The
     // idea is that the processing of this procedure will be unsuspended later by an external event
@@ -2034,8 +2035,10 @@ public class ProcedureExecutor<TEnvironment> {
           if (proc == null) {
             continue;
           }
+
           Baggage.start(proc.bag);
           XTrace.getDefaultLogger().log(proc.toString());
+
           this.activeProcedure = proc;
           int activeCount = activeExecutorCount.incrementAndGet();
           int runningCount = store.setRunningProcedureCount(activeCount);
@@ -2063,6 +2066,7 @@ public class ProcedureExecutor<TEnvironment> {
         LOG.warn("Worker terminating UNNATURALLY {}", this.activeProcedure, t);
       } finally {
         LOG.trace("Worker terminated.");
+        Baggage.discard();
       }
       if (onlyPollUrgent) {
         urgentWorkerThreads.remove(this);

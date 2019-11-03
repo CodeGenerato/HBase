@@ -78,6 +78,9 @@ import org.apache.hadoop.security.authorize.ProxyUsers;
 import org.apache.hadoop.security.token.SecretManager.InvalidToken;
 import org.apache.hadoop.security.token.TokenIdentifier;
 
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+
 /** Reads calls from a connection and queues them for handling. */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings(
     value="VO_VOLATILE_INCREMENT",
@@ -619,6 +622,9 @@ abstract class ServerRpcConnection implements Closeable {
       RpcServer.LOG.trace("RequestHeader " + TextFormat.shortDebugString(header)
           + " totalRequestSize: " + totalRequestSize + " bytes");
     }
+    // XTRACE
+    if(header.getTraceBaggage()!=null) Baggage.start(header.getTraceBaggage().toByteArray());
+
     // Enforcing the call queue size, this triggers a retry in the client
     // This is a bit late to be doing this check - we have already read in the
     // total request.
@@ -712,6 +718,9 @@ abstract class ServerRpcConnection implements Closeable {
 
   protected final RpcResponse getErrorResponse(String msg, Exception e) throws IOException {
     ResponseHeader.Builder headerBuilder = ResponseHeader.newBuilder().setCallId(-1);
+
+    headerBuilder.setTraceBaggage(ByteString.copyFrom(Baggage.fork().toByteArray()));
+
     ServerCall.setExceptionResponse(e, msg, headerBuilder);
     ByteBuffer headerBuf =
         ServerCall.createHeaderAndMessageBytes(null, headerBuilder.build(), 0, null);

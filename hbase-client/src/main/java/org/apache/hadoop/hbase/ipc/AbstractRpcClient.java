@@ -21,6 +21,7 @@ package org.apache.hadoop.hbase.ipc;
 import static org.apache.hadoop.hbase.ipc.IPCUtil.toIOE;
 import static org.apache.hadoop.hbase.ipc.IPCUtil.wrapException;
 
+import org.apache.hadoop.hbase.exceptions.IllegalArgumentIOException;
 import org.apache.hbase.thirdparty.com.google.common.annotations.VisibleForTesting;
 import org.apache.hbase.thirdparty.com.google.common.base.Preconditions;
 import org.apache.hbase.thirdparty.com.google.common.cache.CacheBuilder;
@@ -37,6 +38,8 @@ import org.apache.hbase.thirdparty.com.google.protobuf.RpcCallback;
 import org.apache.hbase.thirdparty.io.netty.util.HashedWheelTimer;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
@@ -69,6 +72,9 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.ipc.RemoteException;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.security.token.TokenSelector;
+
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
 
 /**
  * Provides the basics for a RpcClient implementation like configuration and Logging.
@@ -417,6 +423,23 @@ public abstract class AbstractRpcClient<T extends RpcConnection> implements RpcC
         throw new ServerTooBusyException(addr, count);
       }
       cs.setConcurrentCallsPerServer(count);
+
+      // XTRACE KEY send Request
+
+//      try {
+//        throw new IllegalArgumentIOException("StackTrace");
+//      }
+//      catch(Exception e) {
+//        StringWriter sw = new StringWriter();
+//        PrintWriter pw = new PrintWriter(sw);
+//        e.printStackTrace(pw);
+        //System.out.println(sw.toString());
+
+        XTrace.startTask(true);
+        XTrace.getDefaultLogger().tag("Client RPC", md.getName());
+        //XTrace.getDefaultLogger().log("Client request starts: "+sw.toString());
+      //}
+
       T connection = getConnection(remoteId);
       connection.sendRequest(call, hrc);
     } catch (Exception e) {

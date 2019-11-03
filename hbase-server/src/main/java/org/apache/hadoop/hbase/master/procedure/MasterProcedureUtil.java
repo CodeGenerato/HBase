@@ -108,8 +108,6 @@ public final class MasterProcedureUtil {
 
     protected long submitProcedure(final Procedure<MasterProcedureEnv> proc) {
       assert procId == null : "submitProcedure() was already called, running procId=" + procId;
-      //XTRACE set baggage
-      if(proc!=null)    proc.bag = Baggage.fork();
 
       procId = getProcedureExecutor().submitProcedure(proc, nonceKey);
       return procId;

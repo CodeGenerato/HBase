@@ -22,6 +22,7 @@ import static org.apache.hadoop.hbase.ipc.CallEvent.Type.TIMEOUT;
 import static org.apache.hadoop.hbase.ipc.IPCUtil.setCancelled;
 import static org.apache.hadoop.hbase.ipc.IPCUtil.toIOE;
 
+import org.apache.hadoop.hbase.exceptions.IllegalArgumentIOException;
 import org.apache.hbase.thirdparty.io.netty.handler.timeout.ReadTimeoutHandler;
 import org.apache.hadoop.hbase.security.NettyHBaseRpcConnectionHeaderHandler;
 import org.apache.hbase.thirdparty.com.google.protobuf.RpcCallback;
@@ -44,6 +45,8 @@ import org.apache.hbase.thirdparty.io.netty.util.concurrent.FutureListener;
 import org.apache.hbase.thirdparty.io.netty.util.concurrent.Promise;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
@@ -59,6 +62,12 @@ import org.apache.hadoop.hbase.security.NettyHBaseSaslRpcClientHandler;
 import org.apache.hadoop.hbase.security.SaslChallengeDecoder;
 import org.apache.hadoop.hbase.util.Threads;
 import org.apache.hadoop.security.UserGroupInformation;
+
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
+
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
 
 /**
  * RPC connection implementation based on netty.
@@ -300,6 +309,10 @@ class NettyRpcConnection extends RpcConnection {
     if (reloginInProgress) {
       throw new IOException("Can not send request because relogin is in progress.");
     }
+
+
+    XTrace.getDefaultLogger().log("sendRequest in: "+this.getClass());
+
     hrc.notifyOnCancel(new RpcCallback<Object>() {
 
       @Override
@@ -323,6 +336,9 @@ class NettyRpcConnection extends RpcConnection {
           }
           scheduleTimeoutTask(call);
           final Channel ch = channel;
+          XTrace.getDefaultLogger().log("write Request: "+this.getClass());
+          call.bag=Baggage.fork();
+
           // We must move the whole writeAndFlush call inside event loop otherwise there will be a
           // race condition.
           // In netty's DefaultChannelPipeline, it will find the first outbound handler in the

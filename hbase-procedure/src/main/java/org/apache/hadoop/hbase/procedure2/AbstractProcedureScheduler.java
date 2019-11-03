@@ -27,6 +27,10 @@ import org.apache.yetus.audience.InterfaceAudience;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+
+
 @InterfaceAudience.Private
 public abstract class AbstractProcedureScheduler implements ProcedureScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractProcedureScheduler.class);
@@ -120,6 +124,7 @@ public abstract class AbstractProcedureScheduler implements ProcedureScheduler {
   }
 
   protected void push(final Procedure procedure, final boolean addFront, final boolean notify) {
+    if(procedure!=null) procedure.bag = Baggage.fork();
     schedLock();
     try {
       enqueue(procedure, addFront);

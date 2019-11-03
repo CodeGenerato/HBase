@@ -138,6 +138,7 @@ public abstract class RegionServerCallable<T, S> implements RetryingCallable<T> 
    * code base.
    * @throws Exception
    */
+  // XTRACE KEY method for calling RPCs all over the place
   protected abstract T rpcCall() throws Exception;
 
   /**

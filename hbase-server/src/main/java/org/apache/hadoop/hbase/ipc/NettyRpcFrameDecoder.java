@@ -33,6 +33,9 @@ import org.apache.hbase.thirdparty.io.netty.handler.codec.CorruptedFrameExceptio
 import org.apache.hadoop.hbase.shaded.protobuf.ProtobufUtil;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos;
 
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+
 
 /**
  * Decoder for extracting frame
@@ -165,7 +168,10 @@ public class NettyRpcFrameDecoder extends ByteToMessageDecoder {
 
       RPCProtos.RequestHeader.Builder builder = RPCProtos.RequestHeader.newBuilder();
       ProtobufUtil.mergeFrom(builder, array, offset, length);
-      return builder.build();
+      RPCProtos.RequestHeader rq= builder.build();
+      // XTRACE
+      if(rq.getTraceBaggage()!=null) Baggage.start(rq.getTraceBaggage().toByteArray());
+      return rq;
     } finally {
       msg.release();
     }

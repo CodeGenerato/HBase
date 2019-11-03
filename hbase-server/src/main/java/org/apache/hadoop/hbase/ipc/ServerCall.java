@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.hadoop.hbase.CellScanner;
 import org.apache.hadoop.hbase.DoNotRetryIOException;
+import org.apache.hbase.thirdparty.com.google.protobuf.ByteString;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.apache.hadoop.hbase.exceptions.RegionMovedException;
 import org.apache.hadoop.hbase.io.ByteBufferListOutputStream;
@@ -45,6 +46,8 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.ResponseHeade
 import org.apache.hadoop.hbase.util.ByteBufferUtils;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.util.StringUtils;
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
 
 /**
  * Datastructure that holds all necessary to a method invocation and then afterward, carries
@@ -226,6 +229,7 @@ public abstract class ServerCall<T extends ServerRpcConnection> implements RpcCa
       ResponseHeader.Builder headerBuilder = ResponseHeader.newBuilder();
       // Call id.
       headerBuilder.setCallId(this.id);
+      headerBuilder.setTraceBaggage(ByteString.copyFrom(Baggage.fork().toByteArray()));
       if (t != null) {
         setExceptionResponse(t, errorMsg, headerBuilder);
       }

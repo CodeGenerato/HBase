@@ -126,6 +126,8 @@ message RequestHeader {
   // See HConstants.
   optional uint32 priority = 6;
   optional uint32 timeout = 7;
+  // XTRACE
+  optional bytes trace_baggage = 8;
 }
 
 message ResponseHeader {
@@ -134,4 +136,6 @@ message ResponseHeader {
   optional ExceptionResponse exception = 2;
   // If present, then an encoded data block follows.
   optional CellBlockMeta cell_block_meta = 3;
+  // XTRACE
+  optional bytes trace_baggage = 4;
 }

@@ -35,6 +35,7 @@ import org.apache.hadoop.hbase.exceptions.TimeoutIOException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.hadoop.ipc.RemoteException;
+import org.apache.hbase.thirdparty.com.google.protobuf.ByteString;
 import org.apache.yetus.audience.InterfaceAudience;
 
 import org.apache.hbase.thirdparty.com.google.common.base.Preconditions;
@@ -45,6 +46,8 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.CellBlockMeta
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.ExceptionResponse;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.RequestHeader;
 
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
 /**
  * Utility to help ipc'ing.
  */
@@ -107,6 +110,8 @@ class IPCUtil {
   static RequestHeader buildRequestHeader(Call call, CellBlockMeta cellBlockMeta) {
     RequestHeader.Builder builder = RequestHeader.newBuilder();
     builder.setCallId(call.id);
+
+    builder.setTraceBaggage(ByteString.copyFrom(Baggage.fork().toByteArray()));
     //TODO handle htrace API change, see HBASE-18895
     /*if (call.span != null) {
       builder.setTraceInfo(RPCTInfo.newBuilder().setParentId(call.span.getSpanId())

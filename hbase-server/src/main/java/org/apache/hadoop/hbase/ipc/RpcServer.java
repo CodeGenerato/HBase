@@ -55,6 +55,7 @@ import org.apache.hadoop.hbase.security.SaslUtil.QualityOfProtection;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.hbase.security.token.AuthenticationTokenSecretManager;
+import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos;
 import org.apache.hadoop.hbase.util.Pair;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.authorize.AuthorizationException;
@@ -82,6 +83,8 @@ import edu.brown.cs.systems.xtrace.XTrace;
 import edu.brown.cs.systems.xtrace.XTraceSettings;
 import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
 import edu.brown.cs.systems.xtrace.logging.XTraceLoggingLevel;
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
 
 
 /**
@@ -409,8 +412,10 @@ public abstract class RpcServer implements RpcServerInterface,
 
       MethodDescriptor md = call.getMethod();
 
-      XTrace.startTask(true);
-      XTrace.setLoggingLevel(XTraceLoggingLevel.DEBUG);
+      RPCProtos.RequestHeader rq=call.getHeader();
+      if(rq.getTraceBaggage()!=null) Baggage.start(rq.getTraceBaggage().toByteArray());
+      //XTrace.startTask(true);
+     // XTrace.setLoggingLevel(XTraceLoggingLevel.DEBUG);
       XTrace.getDefaultLogger().tag("RPC call received", md.getName());
       XTrace.getDefaultLogger().log(call.toString());
 
