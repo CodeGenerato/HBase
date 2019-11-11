@@ -76,6 +76,9 @@ import org.apache.hadoop.security.token.TokenSelector;
 import edu.brown.cs.systems.xtrace.XTrace;
 import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
 
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+
 /**
  * Provides the basics for a RpcClient implementation like configuration and Logging.
  * <p>
@@ -335,6 +338,7 @@ public abstract class AbstractRpcClient<T extends RpcConnection> implements RpcC
     Message val;
     try {
       val = done.get();
+      XTrace.getDefaultLogger().log("call done, return result from callback");
     } catch (IOException e) {
       throw new ServiceException(e);
     }
@@ -424,21 +428,8 @@ public abstract class AbstractRpcClient<T extends RpcConnection> implements RpcC
       }
       cs.setConcurrentCallsPerServer(count);
 
-      // XTRACE KEY send Request
-
-//      try {
-//        throw new IllegalArgumentIOException("StackTrace");
-//      }
-//      catch(Exception e) {
-//        StringWriter sw = new StringWriter();
-//        PrintWriter pw = new PrintWriter(sw);
-//        e.printStackTrace(pw);
-        //System.out.println(sw.toString());
-
-        XTrace.startTask(true);
-        XTrace.getDefaultLogger().tag("Client RPC", md.getName());
-        //XTrace.getDefaultLogger().log("Client request starts: "+sw.toString());
-      //}
+      XTrace.startTask(true);
+      XTrace.getDefaultLogger().tag("Send client RPC", md.getName());
 
       T connection = getConnection(remoteId);
       connection.sendRequest(call, hrc);

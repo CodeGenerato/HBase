@@ -36,6 +36,8 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos;
 import edu.brown.cs.systems.baggage.Baggage;
 import edu.brown.cs.systems.baggage.DetachedBaggage;
 
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
 
 /**
  * Decoder for extracting frame
@@ -169,8 +171,8 @@ public class NettyRpcFrameDecoder extends ByteToMessageDecoder {
       RPCProtos.RequestHeader.Builder builder = RPCProtos.RequestHeader.newBuilder();
       ProtobufUtil.mergeFrom(builder, array, offset, length);
       RPCProtos.RequestHeader rq= builder.build();
-      // XTRACE
-      if(rq.getTraceBaggage()!=null) Baggage.start(rq.getTraceBaggage().toByteArray());
+      if (rq.getTraceBaggage() != null) Baggage.start(rq.getTraceBaggage().toByteArray());
+      XTrace.getDefaultLogger().log("response header read: " + rq.toString());
       return rq;
     } finally {
       msg.release();

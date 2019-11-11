@@ -7,11 +7,17 @@ To make the injection of XTrace and Baggage libs work:
 * Dependencies are inherited from root pom.xml. So building modules independently
 does currently not work. 
 
+* Aspects for XTrace and Baggage are only applied on hbase-server and hbase-procedure right now.
+Applying aspects on all modules is currently not possible because of an incompatibiliy/bug of aspectj and/or maven-shade-plugin in certain cases.
+Code produced by aspectj for the class AsyncBufferedMutatorImpl in hbase-client cannot be processed by maven-shade-plugin. Throws an exception while building.
 
 # List of system boundaries and baggage propagation:
 
 * Client sends request
-NettyRPCConnection -> NettyRPCDuplexHandler -> (network) -> RPCServer
+AbstractRpcClient -> NettyRPCConnection -> NettyRPCDuplexHandler -> (network) -> CallRunner
+
+* Server receives request and answers
+CallRunner -> RPCServer -> (some actions) -> return to CallRunner -> ServerCall.setResponse()
 
 * HMaster receives and processes request
-RPCServer -> MasterProcedureUtil -> ProcedureExecuter
+CallRunner -> RPCServer -> MasterProcedureUtil -> ProcedureExecuter

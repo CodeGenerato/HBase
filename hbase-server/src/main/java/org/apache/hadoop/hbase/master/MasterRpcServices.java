@@ -307,7 +307,11 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.ReplicationProtos.Updat
 import org.apache.hadoop.hbase.shaded.protobuf.generated.ReplicationProtos.UpdateReplicationPeerConfigResponse;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.SnapshotProtos.SnapshotDescription;
 
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
+
 /**
+ *
  * Implements the master RPC services.
  */
 @InterfaceAudience.Private
@@ -478,6 +482,7 @@ public class MasterRpcServices extends RSRpcServices
   public RegionServerReportResponse regionServerReport(RpcController controller,
       RegionServerReportRequest request) throws ServiceException {
     try {
+      XTrace.getDefaultLogger().log("get report for region server from master");
       master.checkServiceStarted();
       int versionNumber = 0;
       String version = "0.0.0";

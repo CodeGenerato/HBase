@@ -25,6 +25,9 @@ import java.io.InterruptedIOException;
 
 import org.apache.yetus.audience.InterfaceAudience;
 
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+
 /**
  * Simple {@link RpcCallback} implementation providing a
  * {@link java.util.concurrent.Future}-like {@link BlockingRpcCallback#get()} method, which
@@ -35,7 +38,7 @@ import org.apache.yetus.audience.InterfaceAudience;
 public class BlockingRpcCallback<R> implements RpcCallback<R> {
   private R result;
   private boolean resultSet = false;
-
+  private DetachedBaggage bag = null;
   /**
    * Called on completion of the RPC call with the response object, or {@code null} in the case of
    * an error.
@@ -46,6 +49,7 @@ public class BlockingRpcCallback<R> implements RpcCallback<R> {
     synchronized (this) {
       result = parameter;
       resultSet = true;
+      bag = Baggage.fork();
       this.notifyAll();
     }
   }
@@ -66,6 +70,7 @@ public class BlockingRpcCallback<R> implements RpcCallback<R> {
         throw exception;
       }
     }
+    if(bag != null) Baggage.start(bag);
     return result;
   }
 }

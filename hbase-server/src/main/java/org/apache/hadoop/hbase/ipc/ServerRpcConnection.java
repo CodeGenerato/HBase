@@ -81,6 +81,9 @@ import org.apache.hadoop.security.token.TokenIdentifier;
 import edu.brown.cs.systems.baggage.Baggage;
 import edu.brown.cs.systems.baggage.DetachedBaggage;
 
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
+
 /** Reads calls from a connection and queues them for handling. */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings(
     value="VO_VOLATILE_INCREMENT",
@@ -623,7 +626,13 @@ abstract class ServerRpcConnection implements Closeable {
           + " totalRequestSize: " + totalRequestSize + " bytes");
     }
     // XTRACE
-    if(header.getTraceBaggage()!=null) Baggage.start(header.getTraceBaggage().toByteArray());
+    // REMARK:
+    // We do not maintain baggage here since this is done in the CallRunner,
+    // the ServerRPCConnection just uses an scheduler (additional executer thread)
+    // that executes the call.
+
+    // if(header.getTraceBaggage()!=null) Baggage.start(header.getTraceBaggage().toByteArray());
+    // XTrace.getDefaultLogger().log("response header read: "+header.toString());
 
     // Enforcing the call queue size, this triggers a retry in the client
     // This is a bit late to be doing this check - we have already read in the

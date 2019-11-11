@@ -412,14 +412,6 @@ public abstract class RpcServer implements RpcServerInterface,
 
       MethodDescriptor md = call.getMethod();
 
-      RPCProtos.RequestHeader rq=call.getHeader();
-      if(rq.getTraceBaggage()!=null) Baggage.start(rq.getTraceBaggage().toByteArray());
-      //XTrace.startTask(true);
-     // XTrace.setLoggingLevel(XTraceLoggingLevel.DEBUG);
-      XTrace.getDefaultLogger().tag("RPC call received", md.getName());
-      XTrace.getDefaultLogger().log(call.toString());
-
-
       Message param = call.getParam();
       status.setRPC(md.getName(), new Object[]{param},
         call.getReceiveTime());
@@ -427,9 +419,13 @@ public abstract class RpcServer implements RpcServerInterface,
       status.setRPCPacket(param);
       status.resume("Servicing call");
       //get an instance of the method arg type
-      HBaseRpcController controller = new HBaseRpcControllerImpl(call.getCellScanner());
+      HBaseRpcControllerImpl controller = new HBaseRpcControllerImpl(call.getCellScanner());
       controller.setCallTimeout(call.getTimeout());
+
+      XTrace.getDefaultLogger().log("calling blocking method: " + md.getFullName());
       Message result = call.getService().callBlockingMethod(md, controller, param);
+      XTrace.getDefaultLogger().log("blocking method returned: " + md.getFullName());
+
       long receiveTime = call.getReceiveTime();
       long startTime = call.getStartTime();
       long endTime = System.currentTimeMillis();

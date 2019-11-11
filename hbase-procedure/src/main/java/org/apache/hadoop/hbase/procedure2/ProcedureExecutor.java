@@ -990,11 +990,11 @@ public class ProcedureExecutor<TEnvironment> {
           LOG.info("Recursive bypass on children of pid={}", procedure.getProcId());
           this.procedures.forEachValue(1 /*Single-threaded*/,
             // Transformer
-            v -> {
+                  (Procedure<TEnvironment> v) -> {
              return v.getParentProcId() == procedure.getProcId()? v: null;
             },
             // Consumer
-            v -> {
+                  (Procedure<TEnvironment> v) -> {
               boolean result = false;
               IOException ioe = null;
               try {
@@ -1711,7 +1711,7 @@ public class ProcedureExecutor<TEnvironment> {
     Preconditions.checkArgument(procedure.getState() == ProcedureState.RUNNABLE,
         "NOT RUNNABLE! " + procedure.toString());
 
-    XTrace.getDefaultLogger().log("Precdure is executed:"+ procedure.getProcName());
+    XTrace.getDefaultLogger().log("Procedure is executed:"+ procedure.getProcName());
     // Procedures can suspend themselves. They skip out by throwing a ProcedureSuspendedException.
     // The exception is caught below and then we hurry to the exit without disturbing state. The
     // idea is that the processing of this procedure will be unsuspended later by an external event
@@ -2060,13 +2060,13 @@ public class ProcedureExecutor<TEnvironment> {
             this.activeProcedure = null;
             lastUpdate = EnvironmentEdgeManager.currentTime();
             executionStartTime.set(Long.MAX_VALUE);
+            Baggage.discard();
           }
         }
       } catch (Throwable t) {
         LOG.warn("Worker terminating UNNATURALLY {}", this.activeProcedure, t);
       } finally {
         LOG.trace("Worker terminated.");
-        Baggage.discard();
       }
       if (onlyPollUrgent) {
         urgentWorkerThreads.remove(this);

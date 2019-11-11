@@ -30,6 +30,8 @@ import org.slf4j.LoggerFactory;
 import edu.brown.cs.systems.baggage.Baggage;
 import edu.brown.cs.systems.baggage.DetachedBaggage;
 
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
 
 @InterfaceAudience.Private
 public abstract class AbstractProcedureScheduler implements ProcedureScheduler {
@@ -124,6 +126,7 @@ public abstract class AbstractProcedureScheduler implements ProcedureScheduler {
   }
 
   protected void push(final Procedure procedure, final boolean addFront, final boolean notify) {
+    XTrace.getDefaultLogger().log("Enqueue procedure");
     if(procedure!=null) procedure.bag = Baggage.fork();
     schedLock();
     try {

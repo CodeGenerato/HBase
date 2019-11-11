@@ -663,8 +663,8 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
       // Read the header
       ResponseHeader responseHeader = ResponseHeader.parseDelimitedFrom(in);
 
-      // XTRACE
       if(responseHeader.getTraceBaggage()!=null) Baggage.start(responseHeader.getTraceBaggage().toByteArray());
+      XTrace.getDefaultLogger().log("response header read: "+responseHeader.toString());
       int id = responseHeader.getCallId();
       call = calls.remove(id); // call.done have to be set before leaving this method
       expectedCall = (call != null && !call.isDone());

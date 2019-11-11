@@ -44,8 +44,13 @@ import org.apache.hbase.thirdparty.com.google.protobuf.Message;
 import org.apache.hadoop.hbase.shaded.protobuf.ProtobufUtil;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.RequestHeader;
 import org.apache.hadoop.hbase.util.Pair;
+
 import edu.brown.cs.systems.baggage.Baggage;
 import edu.brown.cs.systems.baggage.DetachedBaggage;
+
+
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
 
 /** Reads calls from a connection and queues them for handling. */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
@@ -210,8 +215,10 @@ class SimpleServerRpcConnection extends ServerRpcConnection {
           Message.Builder builder = RequestHeader.newBuilder();
           ProtobufUtil.mergeFrom(builder, cis, headerSize);
           RequestHeader header = (RequestHeader) builder.build();
-          if(header.getTraceBaggage()!=null) Baggage.start(header.getTraceBaggage().toByteArray());
-
+          if (header.getTraceBaggage() != null) {
+            Baggage.start(header.getTraceBaggage().toByteArray());
+          }
+          XTrace.getDefaultLogger().log("response header read: " + header.toString());
 
           // Notify the client about the offending request
           SimpleServerCall reqTooBig = new SimpleServerCall(header.getCallId(), this.service, null,
