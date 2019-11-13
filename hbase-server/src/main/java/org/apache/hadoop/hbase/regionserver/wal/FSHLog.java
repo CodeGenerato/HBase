@@ -580,6 +580,7 @@ public class FSHLog extends AbstractFSWAL<Writer> {
           Throwable lastException = null;
           try {
             TraceUtil.addTimelineAnnotation("syncing writer");
+            //TODO XTRACE where is this class used? This runnable needs to be instrumented, if used
             writer.sync(useHsync);
             TraceUtil.addTimelineAnnotation("writer synced");
             currentSequence = updateHighestSyncedSequence(currentSequence);
@@ -950,6 +951,9 @@ public class FSHLog extends AbstractFSWAL<Writer> {
       // the WAL is reset. It is important that we not short-circuit and exit early this method.
       // It is important that we always go through the attainSafePoint on the end. Another thread,
       // the log roller may be waiting on a signal from us here and will just hang without it.
+
+      //TODO XTRACE where is this class used? if ringbuffer is changed this is executed and
+      //notifies a thread to sync with files, needs to be instrumented, if used
 
       try {
         if (truck.type() == RingBufferTruck.Type.SYNC) {

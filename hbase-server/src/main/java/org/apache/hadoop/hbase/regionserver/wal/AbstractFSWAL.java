@@ -83,6 +83,11 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.hbase.thirdparty.com.google.common.annotations.VisibleForTesting;
 
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+
 /**
  * Implementation of {@link WAL} to go against {@link FileSystem}; i.e. keep WALs in HDFS. Only one
  * WAL is ever being written at a time. When a WAL hits a configured maximum size, it is rolled.
@@ -974,6 +979,7 @@ public abstract class AbstractFSWAL<W extends WriterBase> implements WAL {
       throw new IOException(
           "Cannot append; log is closed, regionName = " + hri.getRegionNameAsString());
     }
+    XTrace.getDefaultLogger().log("Pub to RingBuffer");
     MutableLong txidHolder = new MutableLong();
     MultiVersionConcurrencyControl.WriteEntry we = key.getMvcc().begin(() -> {
       txidHolder.setValue(ringBuffer.next());

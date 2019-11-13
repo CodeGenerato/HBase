@@ -19,6 +19,10 @@
 package org.apache.hadoop.hbase.regionserver.wal;
 
 import org.apache.yetus.audience.InterfaceAudience;
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+import edu.brown.cs.systems.xtrace.XTrace;
+
 
 /**
  * A 'truck' to carry a payload across the ring buffer from Handler to WAL. Has EITHER a
@@ -29,6 +33,7 @@ import org.apache.yetus.audience.InterfaceAudience;
 @InterfaceAudience.Private
 final class RingBufferTruck {
 
+  private  DetachedBaggage bag = null;
   public enum Type {
     APPEND, SYNC, EMPTY
   }
@@ -47,6 +52,7 @@ final class RingBufferTruck {
   void load(FSWALEntry entry) {
     this.entry = entry;
     this.type = Type.APPEND;
+    bag = Baggage.fork();
   }
 
   /**
@@ -71,6 +77,9 @@ final class RingBufferTruck {
     FSWALEntry entry = this.entry;
     this.entry = null;
     this.type = Type.EMPTY;
+    if(bag != null) Baggage.start(bag);
+
+    XTrace.getDefaultLogger().log("unload");
     return entry;
   }
 

@@ -46,6 +46,8 @@ import org.apache.hbase.thirdparty.io.netty.channel.EventLoopGroup;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.WALProtos.WALHeader;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.WALProtos.WALTrailer;
 
+import edu.brown.cs.systems.xtrace.XTrace;
+
 /**
  * AsyncWriter for protobuf-based WAL.
  */
@@ -121,6 +123,7 @@ public class AsyncProtobufLogWriter extends AbstractProtobufLogWriter
 
   @Override
   public void append(Entry entry) {
+    XTrace.getDefaultLogger().log("append to outputstream");
     int buffered = output.buffered();
     try {
       entry.getKey().
@@ -141,6 +144,7 @@ public class AsyncProtobufLogWriter extends AbstractProtobufLogWriter
 
   @Override
   public CompletableFuture<Long> sync() {
+    XTrace.getDefaultLogger().log("flush outputstream: "+output);
     return output.flush(false);
   }
 

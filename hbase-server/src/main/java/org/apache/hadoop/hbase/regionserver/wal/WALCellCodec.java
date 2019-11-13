@@ -47,6 +47,8 @@ import org.apache.hadoop.io.IOUtils;
 import org.apache.hbase.thirdparty.com.google.protobuf.ByteString;
 import org.apache.hbase.thirdparty.com.google.protobuf.UnsafeByteOperations;
 
+import edu.brown.cs.systems.xtrace.XTrace;
+
 
 /**
  * Compression in this class is lifted off Compressor/KeyValueCompression.
@@ -357,6 +359,7 @@ public class WALCellCodec implements Codec {
     }
     @Override
     public void write(Cell cell) throws IOException {
+      XTrace.getDefaultLogger().log("write to outputstream: "+ out);
       checkFlushed();
       // Make sure to write tags into WAL
       ByteBufferUtils.putInt(this.out, KeyValueUtil.getSerializedSize(cell, true));

@@ -74,6 +74,9 @@ import org.apache.hbase.thirdparty.io.netty.handler.codec.protobuf.ProtobufVarin
 import org.apache.hbase.thirdparty.io.netty.handler.timeout.IdleStateEvent;
 import org.apache.hbase.thirdparty.io.netty.handler.timeout.IdleStateHandler;
 
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
+
 /**
  * An asynchronous HDFS output stream implementation which fans out data to datanode and only
  * supports writing file with only one block.
@@ -385,6 +388,7 @@ public class FanOutOneBlockAsyncDFSOutput implements AsyncFSOutput {
 
   private void flushBuffer(CompletableFuture<Long> future, ByteBuf dataBuf,
       long nextPacketOffsetInBlock, boolean syncBlock) {
+
     int dataLen = dataBuf.readableBytes();
     int chunkLen = summer.getBytesPerChecksum();
     int trailingPartialChunkLen = dataLen % chunkLen;
@@ -408,6 +412,10 @@ public class FanOutOneBlockAsyncDFSOutput implements AsyncFSOutput {
       waitingAckQueue.removeFirst();
       return;
     }
+    //XTRACE currently this output class is not used, since is to hard to instrument (no RPC headers etc)
+    //this is the point where datanodes are accessed to perform a lightweight low latency write
+    //Baggage could be added to some buffer
+    XTrace.getDefaultLogger().log("write packets "+headerBuf.retainedDuplicate()+" "+dataBuf.retainedDuplicate());
     datanodeList.forEach(ch -> {
       ch.write(headerBuf.retainedDuplicate());
       ch.write(checksumBuf.retainedDuplicate());

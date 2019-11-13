@@ -78,6 +78,11 @@ import java.util.concurrent.TimeUnit;
 
 import static org.apache.hadoop.hbase.client.ConnectionUtils.checkHasFamilies;
 
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+
 /**
  * An implementation of {@link Table}. Used to communicate with a single HBase table.
  * Lightweight. Get as needed and just close when done.
@@ -527,6 +532,7 @@ public class HTable implements Table {
 
   @Override
   public void put(final Put put) throws IOException {
+    XTrace.getDefaultLogger().log("PUT action: "+put);
     validatePut(put);
     ClientServiceCallable<Void> callable =
         new ClientServiceCallable<Void>(this.connection, getName(), put.getRow(),
@@ -545,6 +551,7 @@ public class HTable implements Table {
 
   @Override
   public void put(final List<Put> puts) throws IOException {
+    XTrace.getDefaultLogger().log("PUT multi action");
     for (Put put : puts) {
       validatePut(put);
     }
@@ -558,6 +565,7 @@ public class HTable implements Table {
 
   @Override
   public void mutateRow(final RowMutations rm) throws IOException {
+    XTrace.getDefaultLogger().log("MUTATE ROW: "+rm);
     CancellableRegionServerCallable<MultiResponse> callable =
       new CancellableRegionServerCallable<MultiResponse>(this.connection, getName(), rm.getRow(),
           rpcControllerFactory.newController(), writeRpcTimeoutMs,

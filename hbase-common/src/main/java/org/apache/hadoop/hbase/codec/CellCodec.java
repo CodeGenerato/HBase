@@ -32,6 +32,10 @@ import org.apache.hadoop.hbase.nio.ByteBuff;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.yetus.audience.InterfaceAudience;
 
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
+
+
 /**
  * Basic Cell codec that just writes out all the individual elements of a Cell.  Uses ints
  * delimiting all lengths. Profligate. Needs tune up.
@@ -46,6 +50,7 @@ public class CellCodec implements Codec {
 
     @Override
     public void write(Cell cell) throws IOException {
+      XTrace.getDefaultLogger().log("write to outputstream");
       checkFlushed();
       // Row
       write(cell.getRowArray(), cell.getRowOffset(), cell.getRowLength());

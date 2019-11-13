@@ -140,66 +140,70 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
     ByteBufInputStream in = new ByteBufInputStream(buf);
     ResponseHeader responseHeader = ResponseHeader.parseDelimitedFrom(in);
 
-    // XTRACE
-    if(responseHeader.getTraceBaggage()!=null) Baggage.start(responseHeader.getTraceBaggage().toByteArray());
-    XTrace.getDefaultLogger().log("response header read: "+responseHeader.toString());
+    try {
+      // XTRACE
+      if (responseHeader.getTraceBaggage() != null) Baggage.start(responseHeader.getTraceBaggage().toByteArray());
+      XTrace.getDefaultLogger().log("response header read: " + responseHeader.toString());
 
-    int id = responseHeader.getCallId();
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("got response header " + TextFormat.shortDebugString(responseHeader)
-          + ", totalSize: " + totalSize + " bytes");
-    }
-    RemoteException remoteExc;
-    if (responseHeader.hasException()) {
-      ExceptionResponse exceptionResponse = responseHeader.getException();
-      remoteExc = IPCUtil.createRemoteException(exceptionResponse);
-      if (IPCUtil.isFatalConnectionException(exceptionResponse)) {
-        // Here we will cleanup all calls so do not need to fall back, just return.
-        exceptionCaught(ctx, remoteExc);
+      int id = responseHeader.getCallId();
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("got response header " + TextFormat.shortDebugString(responseHeader)
+                + ", totalSize: " + totalSize + " bytes");
+      }
+      RemoteException remoteExc;
+      if (responseHeader.hasException()) {
+        ExceptionResponse exceptionResponse = responseHeader.getException();
+        remoteExc = IPCUtil.createRemoteException(exceptionResponse);
+        if (IPCUtil.isFatalConnectionException(exceptionResponse)) {
+          // Here we will cleanup all calls so do not need to fall back, just return.
+          exceptionCaught(ctx, remoteExc);
+          return;
+        }
+      } else {
+        remoteExc = null;
+      }
+      Call call = id2Call.remove(id);
+      if (call == null) {
+        // So we got a response for which we have no corresponding 'call' here on the client-side.
+        // We probably timed out waiting, cleaned up all references, and now the server decides
+        // to return a response. There is nothing we can do w/ the response at this stage. Clean
+        // out the wire of the response so its out of the way and we can get other responses on
+        // this connection.
+        int readSoFar = IPCUtil.getTotalSizeWhenWrittenDelimited(responseHeader);
+        int whatIsLeftToRead = totalSize - readSoFar;
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Unknown callId: " + id + ", skipping over this response of " + whatIsLeftToRead
+                  + " bytes");
+        }
         return;
       }
-    } else {
-      remoteExc = null;
-    }
-    Call call = id2Call.remove(id);
-    if (call == null) {
-      // So we got a response for which we have no corresponding 'call' here on the client-side.
-      // We probably timed out waiting, cleaned up all references, and now the server decides
-      // to return a response. There is nothing we can do w/ the response at this stage. Clean
-      // out the wire of the response so its out of the way and we can get other responses on
-      // this connection.
-      int readSoFar = IPCUtil.getTotalSizeWhenWrittenDelimited(responseHeader);
-      int whatIsLeftToRead = totalSize - readSoFar;
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Unknown callId: " + id + ", skipping over this response of " + whatIsLeftToRead
-            + " bytes");
+      if (remoteExc != null) {
+        call.setException(remoteExc);
+        return;
       }
-      return;
+      Message value;
+      if (call.responseDefaultType != null) {
+        Builder builder = call.responseDefaultType.newBuilderForType();
+        builder.mergeDelimitedFrom(in);
+        value = builder.build();
+      } else {
+        value = null;
+      }
+      CellScanner cellBlockScanner;
+      if (responseHeader.hasCellBlockMeta()) {
+        int size = responseHeader.getCellBlockMeta().getLength();
+        // Maybe we could read directly from the ByteBuf.
+        // The problem here is that we do not know when to release it.
+        byte[] cellBlock = new byte[size];
+        buf.readBytes(cellBlock);
+        cellBlockScanner = cellBlockBuilder.createCellScanner(this.codec, this.compressor, cellBlock);
+      } else {
+        cellBlockScanner = null;
+      }
+      call.setResponse(value, cellBlockScanner);
+    }finally {
+      Baggage.discard();
     }
-    if (remoteExc != null) {
-      call.setException(remoteExc);
-      return;
-    }
-    Message value;
-    if (call.responseDefaultType != null) {
-      Builder builder = call.responseDefaultType.newBuilderForType();
-      builder.mergeDelimitedFrom(in);
-      value = builder.build();
-    } else {
-      value = null;
-    }
-    CellScanner cellBlockScanner;
-    if (responseHeader.hasCellBlockMeta()) {
-      int size = responseHeader.getCellBlockMeta().getLength();
-      // Maybe we could read directly from the ByteBuf.
-      // The problem here is that we do not know when to release it.
-      byte[] cellBlock = new byte[size];
-      buf.readBytes(cellBlock);
-      cellBlockScanner = cellBlockBuilder.createCellScanner(this.codec, this.compressor, cellBlock);
-    } else {
-      cellBlockScanner = null;
-    }
-    call.setResponse(value, cellBlockScanner);
   }
 
   @Override

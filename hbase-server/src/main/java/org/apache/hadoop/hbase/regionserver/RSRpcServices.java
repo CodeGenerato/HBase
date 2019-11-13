@@ -239,6 +239,8 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.WALProtos.CompactionDes
 import org.apache.hadoop.hbase.shaded.protobuf.generated.WALProtos.FlushDescriptor;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.WALProtos.RegionEventDescriptor;
 
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
 /**
  * Implements the regionserver RPC services.
  */
@@ -2752,6 +2754,7 @@ public class RSRpcServices implements HBaseRPCErrorHandler,
   @Override
   public MutateResponse mutate(final RpcController rpcc,
       final MutateRequest request) throws ServiceException {
+    XTrace.getDefaultLogger().log("MUTATE server action");
     // rpc controller is how we bring in data via the back door;  it is unprotobuf'ed data.
     // It is also the conduit via which we pass back data.
     HBaseRpcController controller = (HBaseRpcController)rpcc;
@@ -2794,6 +2797,7 @@ public class RSRpcServices implements HBaseRPCErrorHandler,
           r = increment(region, quota, mutation, cellScanner, nonceGroup, spaceQuotaEnforcement);
           break;
         case PUT:
+          XTrace.getDefaultLogger().log("PUT server action");
           Put put = ProtobufUtil.toPut(mutation, cellScanner);
           checkCellSizeLimit(region, put);
           // Throws an exception when violated
@@ -2829,6 +2833,7 @@ public class RSRpcServices implements HBaseRPCErrorHandler,
           }
           break;
         case DELETE:
+          XTrace.getDefaultLogger().log("DELETE server action");
           Delete delete = ProtobufUtil.toDelete(mutation, cellScanner);
           checkCellSizeLimit(region, delete);
           spaceQuotaEnforcement.getPolicyEnforcement(region).check(delete);

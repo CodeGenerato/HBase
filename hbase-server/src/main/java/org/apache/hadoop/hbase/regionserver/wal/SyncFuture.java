@@ -23,6 +23,9 @@ import java.util.concurrent.TimeUnit;
 import org.apache.hadoop.hbase.exceptions.TimeoutIOException;
 import org.apache.yetus.audience.InterfaceAudience;
 
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+
 /**
  * A Future on a filesystem sync call. It given to a client or 'Handler' for it to wait on till the
  * sync completes.
@@ -68,6 +71,8 @@ class SyncFuture {
   private Thread t;
 
   private boolean forceSync;
+
+  private DetachedBaggage bag = null;
 
   /**
    * Call this method to clear old usage and get it ready for new deploy.
@@ -124,8 +129,10 @@ class SyncFuture {
             new IllegalStateException("done txid=" + txid + ", my txid=" + this.txid);
       }
     }
+    //TODO XTRACE join baggage with notified thread here
     // Mark done.
     this.doneTxid = txid;
+    bag = Baggage.fork();
     // Wake up waiting threads.
     notify();
     return true;
@@ -146,6 +153,7 @@ class SyncFuture {
                 + " ms for txid=" + this.txid + ", WAL system stuck?");
       }
     }
+    if (bag != null) Baggage.start(bag);
     if (this.throwable != null) {
       throw new ExecutionException(this.throwable);
     }

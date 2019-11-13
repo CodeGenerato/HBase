@@ -207,6 +207,8 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.WALProtos.RegionEventDe
 import org.apache.hadoop.hbase.shaded.protobuf.generated.WALProtos.RegionEventDescriptor.EventType;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.WALProtos.StoreDescriptor;
 
+import edu.brown.cs.systems.xtrace.XTrace;
+import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
 /**
  * Regions store data for a certain region of a table.  It stores all columns
  * for each row. A given table consists of one or more Regions.
@@ -3976,6 +3978,7 @@ public class HRegion implements HeapSize, PropagatingConfigurationObserver, Regi
    * @throws IOException if an IO problem is encountered
    */
   OperationStatus[] batchMutate(BatchOperation<?> batchOp) throws IOException {
+    XTrace.getDefaultLogger().log("BATCH MUTATE server action");
     boolean initialized = false;
     batchOp.startRegionOperation();
     try {
@@ -4050,6 +4053,7 @@ public class HRegion implements HeapSize, PropagatingConfigurationObserver, Regi
         NonceKey nonceKey = nonceKeyWALEditPair.getFirst();
 
         if (walEdit != null && !walEdit.isEmpty()) {
+          XTrace.getDefaultLogger().log("MINIBATCH server action: Write to WAL");
           writeEntry = doWALAppend(walEdit, batchOp.durability, batchOp.getClusterIds(), now,
               nonceKey.getNonceGroup(), nonceKey.getNonce(), batchOp.getOrigLogSeqNum());
         }
@@ -4061,6 +4065,7 @@ public class HRegion implements HeapSize, PropagatingConfigurationObserver, Regi
         }
       }
 
+      XTrace.getDefaultLogger().log("MINIBATCH server action: Write to MemStore");
       // STEP 5. Write back to memStore
       // NOTE: writeEntry can be null here
       writeEntry = batchOp.writeMiniBatchOperationsToMemStore(miniBatchOp, writeEntry);
@@ -4123,6 +4128,7 @@ public class HRegion implements HeapSize, PropagatingConfigurationObserver, Regi
     CompareOperator op, ByteArrayComparable comparator, TimeRange timeRange,
     RowMutations rowMutations, Mutation mutation)
   throws IOException {
+    XTrace.getDefaultLogger().log("ROW MUTATE server action");
     // Could do the below checks but seems wacky with two callers only. Just comment out for now.
     // One caller passes a Mutation, the other passes RowMutation. Presume all good so we don't
     // need these commented out checks.
@@ -7865,6 +7871,8 @@ public class HRegion implements HeapSize, PropagatingConfigurationObserver, Regi
         "WALEdit is null or empty!");
     Preconditions.checkArgument(!walEdit.isReplay() || origLogSeqNum != SequenceId.NO_SEQUENCE_ID,
         "Invalid replay sequence Id for replay WALEdit!");
+
+    XTrace.getDefaultLogger().log("REGION WAL append");
     // Using default cluster id, as this can only happen in the originating cluster.
     // A slave cluster receives the final value (not the delta) as a Put. We use HLogKey
     // here instead of WALKeyImpl directly to support legacy coprocessors.
