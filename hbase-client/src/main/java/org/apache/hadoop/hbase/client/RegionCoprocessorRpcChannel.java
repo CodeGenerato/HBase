@@ -19,6 +19,7 @@ package org.apache.hadoop.hbase.client;
 
 import java.io.IOException;
 
+import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.yetus.audience.InterfaceAudience;
@@ -70,6 +71,8 @@ class RegionCoprocessorRpcChannel extends SyncCoprocessorRpcChannel {
       final Descriptors.MethodDescriptor method, final Message request,
       final Message responsePrototype)
   throws IOException {
+   // XTrace.startTask(true);
+    XTrace.getDefaultLogger().log("callExecService");
     if (LOG.isTraceEnabled()) {
       LOG.trace("Call: " + method.getName() + ", " + request.toString());
     }

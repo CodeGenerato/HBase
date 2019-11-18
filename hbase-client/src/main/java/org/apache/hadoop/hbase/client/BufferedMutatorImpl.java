@@ -32,6 +32,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
+import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.ipc.RpcControllerFactory;
@@ -176,6 +178,7 @@ public class BufferedMutatorImpl implements BufferedMutator {
   @Override
   public void mutate(Mutation m) throws InterruptedIOException,
       RetriesExhaustedWithDetailsException {
+    XTrace.getDefaultLogger().log("PUT mutator");
     mutate(Collections.singletonList(m));
   }
 
@@ -200,6 +203,7 @@ public class BufferedMutatorImpl implements BufferedMutator {
     currentWriteBufferSize.addAndGet(toAddSize);
     writeAsyncBuffer.addAll(ms);
     undealtMutationCount.addAndGet(toAddCount);
+    XTrace.getDefaultLogger().log("flush");
     doFlush(false);
   }
 
@@ -300,6 +304,7 @@ public class BufferedMutatorImpl implements BufferedMutator {
           // It means someone has gotten the ticker to run the flush.
           break;
         }
+        XTrace.getDefaultLogger().log("submit async proc");
         asf = ap.submit(createTask(access));
       }
       // DON'T do the wait in the try-with-resources. Otherwise, the undealt mutations won't

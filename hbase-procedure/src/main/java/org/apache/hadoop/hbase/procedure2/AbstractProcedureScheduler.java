@@ -127,6 +127,7 @@ public abstract class AbstractProcedureScheduler implements ProcedureScheduler {
 
   protected void push(final Procedure procedure, final boolean addFront, final boolean notify) {
     XTrace.getDefaultLogger().log("Enqueue procedure");
+    //TODO XTRACE why not in procedure executer? we anyway never get it anywhere else
     if(procedure!=null) procedure.bag = Baggage.fork();
     schedLock();
     try {

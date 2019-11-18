@@ -34,6 +34,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+
+import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.hadoop.hbase.CallQueueTooBigException;
 import org.apache.hadoop.hbase.DoNotRetryIOException;
 import org.apache.hadoop.hbase.HConstants;
@@ -520,6 +522,7 @@ class AsyncRequestFutureImpl<CResult> implements AsyncRequestFuture {
    */
   void sendMultiAction(Map<ServerName, MultiAction> actionsByServer,
                                int numAttempt, List<Action> actionsForReplicaThread, boolean reuseThread) {
+    XTrace.getDefaultLogger().log("submit future");
     // Run the last item on the same thread if we are already on a send thread.
     // We hope most of the time it will be the only item, so we can cut down on threads.
     int actionsRemaining = actionsByServer.size();
@@ -541,9 +544,11 @@ class AsyncRequestFutureImpl<CResult> implements AsyncRequestFuture {
       for (Runnable runnable : runnables) {
         if ((--actionsRemaining == 0) && reuseThread
             && numAttempt % HConstants.DEFAULT_HBASE_CLIENT_RETRIES_NUMBER != 0) {
+          XTrace.getDefaultLogger().log("run runnable");
           runnable.run();
         } else {
           try {
+            XTrace.getDefaultLogger().log("submit future");
             pool.submit(runnable);
           } catch (Throwable t) {
             if (t instanceof RejectedExecutionException) {

@@ -428,8 +428,8 @@ public abstract class AbstractRpcClient<T extends RpcConnection> implements RpcC
       }
       cs.setConcurrentCallsPerServer(count);
 
-      XTrace.startTask(true);
-      XTrace.getDefaultLogger().tag("Send client RPC", md.getName());
+
+      XTrace.getDefaultLogger().log("Send client RPC", md.getName());
 
       T connection = getConnection(remoteId);
       connection.sendRequest(call, hrc);

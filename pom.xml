@@ -897,6 +897,42 @@
       </plugins>
     </pluginManagement>
     <plugins>
+   <plugin>
+     <groupId>org.codehaus.mojo</groupId>
+     <artifactId>aspectj-maven-plugin</artifactId>
+     <version>1.8</version>
+     <configuration>
+       <complianceLevel>1.8</complianceLevel>
+       <source>1.8</source>
+       <target>1.8</target>
+       <showWeaveInfo>true</showWeaveInfo>
+       <verbose>true</verbose>
+       <Xlint>ignore</Xlint>
+       <encoding>UTF-8</encoding>
+       <Xjoinpoints>synchronization</Xjoinpoints>
+       <Xlint>
+         unmatchedSuperTypeInCall=ignore,adviceDidNotMatch=ignore,typeNotExposedToWeaver=ignore,uncheckedAdviceConversion=ignore,invalidAbsoluteTypeName=ignore
+       </Xlint>
+       <aspectLibraries>
+         <aspectLibrary>
+           <groupId>edu.brown.cs.systems</groupId>
+           <artifactId>tracingplane-aspects</artifactId>
+         </aspectLibrary>
+         <aspectLibrary>
+           <groupId>edu.brown.cs.systems</groupId>
+           <artifactId>xtrace-aspects</artifactId>
+         </aspectLibrary>
+       </aspectLibraries>
+     </configuration>
+     <executions>
+       <execution>
+         <goals>
+           <goal>compile</goal>
+         </goals>
+            </execution>
+          </executions>
+        </plugin>
+
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
