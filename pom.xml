@@ -907,7 +907,6 @@
        <target>1.8</target>
        <showWeaveInfo>true</showWeaveInfo>
        <verbose>true</verbose>
-       <Xlint>ignore</Xlint>
        <encoding>UTF-8</encoding>
        <Xjoinpoints>synchronization</Xjoinpoints>
        <Xlint>
@@ -921,7 +920,12 @@
          <aspectLibrary>
            <groupId>edu.brown.cs.systems</groupId>
            <artifactId>xtrace-aspects</artifactId>
+	
          </aspectLibrary>
+	<aspectLibrary>
+              <groupId>org.apache.hbase</groupId>
+              <artifactId>xtrace-aspects</artifactId>
+            </aspectLibrary>
        </aspectLibraries>
      </configuration>
      <executions>
@@ -2219,6 +2223,12 @@
       <artifactId>junit</artifactId>
       <scope>test</scope>
           </dependency>
+<dependency>
+              <groupId>org.apache.hbase</groupId>
+              <artifactId>xtrace-aspects</artifactId>
+ 	      <version>2.1.7</version>
+ </dependency>
+
 
       <dependency>
         <groupId>org.aspectj</groupId>
