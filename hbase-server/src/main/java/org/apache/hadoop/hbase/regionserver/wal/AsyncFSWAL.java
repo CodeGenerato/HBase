@@ -42,6 +42,10 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
+
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -348,6 +352,12 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
     final long startTimeNs = System.nanoTime();
     final long epoch = (long) epochAndState >>> 2L;
     addListener(writer.sync(), (result, error) -> {
+     // TODO XTRACE: this is executed by a new thread, we have to transfer baggage over the result
+      // + this callback marks the sync as done and syncs get deleted, the outer sync thread just waits until the sync
+      // queue is empty, so we need to memorize which syncs are done. it is enough to store the baggage of the deleted
+      // snycs in a set and check on return of the outer thread which baggages originated from the outer thread based on the baggage id
+      // we join these
+
       if (error != null) {
         syncFailed(epoch, error);
       } else {
@@ -364,8 +374,10 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
 
   private int finishSyncLowerThanTxid(long txid, boolean addSyncTrace) {
     int finished = 0;
+    DetachedBaggage bag = Baggage.stop();
     for (Iterator<SyncFuture> iter = syncFutures.iterator(); iter.hasNext();) {
       SyncFuture sync = iter.next();
+      Baggage.start(sync.bag);
       if (sync.getTxid() <= txid) {
         sync.done(txid, null);
         iter.remove();
@@ -377,6 +389,7 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
         break;
       }
     }
+    Baggage.start(bag);
     return finished;
   }
 
@@ -387,13 +400,16 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
       if (toWriteAppends.isEmpty()) {
         // Also no appends that wait to be written out, then just finished all pending syncs.
         long maxSyncTxid = highestSyncedTxid.get();
+        DetachedBaggage bag =Baggage.stop();
         for (SyncFuture sync : syncFutures) {
+          Baggage.start(sync.bag);
           maxSyncTxid = Math.max(maxSyncTxid, sync.getTxid());
           sync.done(maxSyncTxid, null);
           if (addSyncTrace) {
             addTimeAnnotation(sync, "writer synced");
           }
         }
+        Baggage.start(bag);
         highestSyncedTxid.set(maxSyncTxid);
         int finished = syncFutures.size();
         syncFutures.clear();
@@ -424,8 +440,10 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
     // finish some.
     finishSync(false);
     long newHighestProcessedAppendTxid = -1L;
+    DetachedBaggage bag= Baggage.stop();
     for (Iterator<FSWALEntry> iter = toWriteAppends.iterator(); iter.hasNext();) {
       FSWALEntry entry = iter.next();
+      if(entry.bag != null) edu.brown.cs.systems.baggage.Baggage.start(entry.bag);
       boolean appended;
       try {
         appended = append(writer, entry);
@@ -438,13 +456,18 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
         // This is possible, when we fail to sync, we will add the unackedAppends back to
         // toWriteAppends, so here we may get an entry which is already in the unackedAppends.
         if (unackedAppends.isEmpty() || unackedAppends.peekLast().getTxid() < entry.getTxid()) {
+          //TODO XTRACE do wen need to fork again, or use old baggage that is still in the entry?
           unackedAppends.addLast(entry);
         }
         if (writer.getLength() - fileLengthAtLastSync >= batchSize) {
           break;
         }
       }
+      // have to discard because next part cannot be associated with one particular append
+
     }
+    Baggage.start(bag);
+
     // if we have a newer transaction id, update it.
     // otherwise, use the previous transaction id.
     if (newHighestProcessedAppendTxid > 0) {
@@ -475,6 +498,11 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
   }
 
   private void consume() {
+    // TODO XTRACE, we cannot trace per request here
+    // because many requests are flushed together, we can only track the start and end event but not the actual file write
+    // a file write cannot be associated with one request
+    //XTrace.startTask(true);
+    //XTrace.getDefaultLogger().tag("consume WAL ops", "consume WAL Ops");
     consumeLock.lock();
     try {
       int currentEpochAndState = epochAndState;
@@ -495,58 +523,62 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
       }
     } finally {
       consumeLock.unlock();
-    }
-    long nextCursor = waitingConsumePayloadsGatingSequence.get() + 1;
-    for (long cursorBound = waitingConsumePayloads.getCursor(); nextCursor <= cursorBound;
-      nextCursor++) {
-      if (!waitingConsumePayloads.isPublished(nextCursor)) {
-        break;
+    }try {
+      long nextCursor = waitingConsumePayloadsGatingSequence.get() + 1;
+      for (long cursorBound = waitingConsumePayloads.getCursor(); nextCursor <= cursorBound;
+           nextCursor++) {
+        if (!waitingConsumePayloads.isPublished(nextCursor)) {
+          break;
+        }
+        RingBufferTruck truck = waitingConsumePayloads.get(nextCursor);
+        switch (truck.type()) {
+          case APPEND:
+            toWriteAppends.addLast(truck.unloadAppend());
+            break;
+          case SYNC:
+            syncFutures.add(truck.unloadSync());
+            break;
+          default:
+            LOG.warn("RingBufferTruck with unexpected type: " + truck.type());
+            break;
+        }
+        waitingConsumePayloadsGatingSequence.set(nextCursor);
       }
-      RingBufferTruck truck = waitingConsumePayloads.get(nextCursor);
-      switch (truck.type()) {
-        case APPEND:
-          toWriteAppends.addLast(truck.unloadAppend());
-          break;
-        case SYNC:
-          syncFutures.add(truck.unloadSync());
-          break;
-        default:
-          LOG.warn("RingBufferTruck with unexpected type: " + truck.type());
-          break;
+      appendAndSync();
+      if (hasConsumerTask.get()) {
+        return;
       }
-      waitingConsumePayloadsGatingSequence.set(nextCursor);
-    }
-    appendAndSync();
-    if (hasConsumerTask.get()) {
-      return;
-    }
-    if (toWriteAppends.isEmpty()) {
-      if (waitingConsumePayloadsGatingSequence.get() == waitingConsumePayloads.getCursor()) {
-        consumerScheduled.set(false);
-        // recheck here since in append and sync we do not hold the consumeLock. Thing may
-        // happen like
-        // 1. we check cursor, no new entry
-        // 2. someone publishes a new entry to ringbuffer and the consumerScheduled is true and
-        // give up scheduling the consumer task.
-        // 3. we set consumerScheduled to false and also give up scheduling consumer task.
+      if (toWriteAppends.isEmpty()) {
         if (waitingConsumePayloadsGatingSequence.get() == waitingConsumePayloads.getCursor()) {
-          // we will give up consuming so if there are some unsynced data we need to issue a sync.
-          if (writer.getLength() > fileLengthAtLastSync && !syncFutures.isEmpty() &&
-            syncFutures.last().getTxid() > highestProcessedAppendTxidAtLastSync) {
-            // no new data in the ringbuffer and we have at least one sync request
-            sync(writer);
-          }
-          return;
-        } else {
-          // maybe someone has grabbed this before us
-          if (!consumerScheduled.compareAndSet(false, true)) {
+          consumerScheduled.set(false);
+          // recheck here since in append and sync we do not hold the consumeLock. Thing may
+          // happen like
+          // 1. we check cursor, no new entry
+          // 2. someone publishes a new entry to ringbuffer and the consumerScheduled is true and
+          // give up scheduling the consumer task.
+          // 3. we set consumerScheduled to false and also give up scheduling consumer task.
+          if (waitingConsumePayloadsGatingSequence.get() == waitingConsumePayloads.getCursor()) {
+            // we will give up consuming so if there are some unsynced data we need to issue a sync.
+            if (writer.getLength() > fileLengthAtLastSync && !syncFutures.isEmpty() &&
+                    syncFutures.last().getTxid() > highestProcessedAppendTxidAtLastSync) {
+              // no new data in the ringbuffer and we have at least one sync request
+              sync(writer);
+            }
             return;
+          } else {
+            // maybe someone has grabbed this before us
+            if (!consumerScheduled.compareAndSet(false, true)) {
+              return;
+            }
           }
         }
       }
+
+      // reschedule if we still have something to write.
+      consumeExecutor.execute(consumer);
+    }finally {
+      XTrace.getDefaultLogger().log("consume done");
     }
-    // reschedule if we still have something to write.
-    consumeExecutor.execute(consumer);
   }
 
   private boolean shouldScheduleConsumer() {
@@ -565,6 +597,7 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
     if (shouldScheduleConsumer()) {
       consumeExecutor.execute(consumer);
     }
+    XTrace.getDefaultLogger().log("append done");
     return txid;
   }
 
@@ -584,6 +617,7 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
         consumeExecutor.execute(consumer);
       }
       blockOnSync(future);
+      XTrace.getDefaultLogger().log("sync done");
     }
   }
 
@@ -606,7 +640,14 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
       if (shouldScheduleConsumer()) {
         consumeExecutor.execute(consumer);
       }
+      XTrace.getDefaultLogger().log("waiting for sync done");
       blockOnSync(future);
+      //TODO XTRACE wait on sync, need baggage prop here
+      // writes were issued before, in this sync method we wait for the flush
+      // here a truck is published that contains the future (callback) for the txid we are waiting for
+      // In consume(), a thread syncs open writes and marks futures as done (in appendAndSync finishSync is called)
+      // when this happens we return here.
+      XTrace.getDefaultLogger().log("sync done");
     }
   }
 

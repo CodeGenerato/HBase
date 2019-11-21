@@ -17,6 +17,7 @@
  */
 package org.apache.hadoop.hbase.client;
 
+import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.hbase.thirdparty.com.google.common.annotations.VisibleForTesting;
 
 import static org.apache.hadoop.hbase.client.ConnectionUtils.calcEstimatedSize;
@@ -97,6 +98,8 @@ public class ClientAsyncPrefetchScanner extends ClientSimpleScanner {
   @Override
   public Result next() throws IOException {
     try {
+
+
       lock.lock();
       while (cache.isEmpty()) {
         handleException();
@@ -168,13 +171,18 @@ public class ClientAsyncPrefetchScanner extends ClientSimpleScanner {
 
     @Override
     public void run() {
+      //TODO XTrace async prefetcher as own task
+      //XTrace.startTask(true);
+      //XTrace.getDefaultLogger().tag("Scann Prefetcher", "Scan Prefetcher");
       while (!closed) {
+
         boolean succeed = false;
         try {
           lock.lock();
           while (!prefetchCondition()) {
             notFull.await();
           }
+         // XTrace.getDefaultLogger().log("load cache");
           loadCache();
           succeed = true;
         } catch (Exception e) {

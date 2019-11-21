@@ -7888,9 +7888,11 @@ public class HRegion implements HeapSize, PropagatingConfigurationObserver, Regi
     }
     WriteEntry writeEntry = null;
     try {
+      XTrace.getDefaultLogger().log("append");
       long txid = this.wal.append(this.getRegionInfo(), walKey, walEdit, true);
       // Call sync on our edit.
       if (txid != 0) {
+        XTrace.getDefaultLogger().log("sync");
         sync(txid, durability);
       }
       writeEntry = walKey.getWriteEntry();

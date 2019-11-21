@@ -305,6 +305,8 @@ public class HTable implements Table {
    */
   @Override
   public ResultScanner getScanner(Scan scan) throws IOException {
+    XTrace.startTask(true);
+    XTrace.getDefaultLogger().tag("SCANNER","SCANNER");
     if (scan.getCaching() <= 0) {
       scan.setCaching(scannerCaching);
     }
@@ -366,6 +368,8 @@ public class HTable implements Table {
   }
 
   private Result get(Get get, final boolean checkExistenceOnly) throws IOException {
+    XTrace.startTask(true);
+    XTrace.getDefaultLogger().tag("GET","GET");
     // if we are changing settings to the get, clone it.
     if (get.isCheckExistenceOnly() != checkExistenceOnly || get.getConsistency() == null) {
       get = ReflectionUtils.newInstance(get.getClass(), get);
@@ -471,6 +475,7 @@ public class HTable implements Table {
   public static <R> void doBatchWithCallback(List<? extends Row> actions, Object[] results,
     Callback<R> callback, ClusterConnection connection, ExecutorService pool, TableName tableName)
     throws InterruptedIOException, RetriesExhaustedWithDetailsException {
+
     int operationTimeout = connection.getConnectionConfiguration().getOperationTimeout();
     int writeTimeout = connection.getConfiguration().getInt(HConstants.HBASE_RPC_WRITE_TIMEOUT_KEY,
         connection.getConfiguration().getInt(HConstants.HBASE_RPC_TIMEOUT_KEY,
@@ -493,6 +498,8 @@ public class HTable implements Table {
 
   @Override
   public void delete(final Delete delete) throws IOException {
+    XTrace.startTask(true);
+    XTrace.getDefaultLogger().tag("DELETE", "DELETE");
     ClientServiceCallable<Void> callable =
         new ClientServiceCallable<Void>(this.connection, getName(), delete.getRow(),
             this.rpcControllerFactory.newController(), delete.getPriority()) {
@@ -511,6 +518,8 @@ public class HTable implements Table {
   @Override
   public void delete(final List<Delete> deletes)
   throws IOException {
+    XTrace.startTask(true);
+    XTrace.getDefaultLogger().tag("DELETE", "DELETE");
     Object[] results = new Object[deletes.size()];
     try {
       batch(deletes, results, writeRpcTimeoutMs);
@@ -532,7 +541,10 @@ public class HTable implements Table {
 
   @Override
   public void put(final Put put) throws IOException {
-    XTrace.getDefaultLogger().log("PUT action: "+put);
+    XTrace.startTask(true);
+    XTrace.getDefaultLogger().tag("PUT", "PUT");
+    XTrace.getDefaultLogger().log("start put");
+
     validatePut(put);
     ClientServiceCallable<Void> callable =
         new ClientServiceCallable<Void>(this.connection, getName(), put.getRow(),
@@ -551,7 +563,10 @@ public class HTable implements Table {
 
   @Override
   public void put(final List<Put> puts) throws IOException {
-    XTrace.getDefaultLogger().log("PUT multi action");
+    XTrace.startTask(true);
+    XTrace.getDefaultLogger().tag("PUT MULTI", "PUT MULTI");
+    XTrace.getDefaultLogger().log("start put");
+
     for (Put put : puts) {
       validatePut(put);
     }
@@ -565,7 +580,8 @@ public class HTable implements Table {
 
   @Override
   public void mutateRow(final RowMutations rm) throws IOException {
-    XTrace.getDefaultLogger().log("MUTATE ROW: "+rm);
+    XTrace.startTask(true);
+    XTrace.getDefaultLogger().tag("MUTATE ROW","MUTATE ROW");
     CancellableRegionServerCallable<MultiResponse> callable =
       new CancellableRegionServerCallable<MultiResponse>(this.connection, getName(), rm.getRow(),
           rpcControllerFactory.newController(), writeRpcTimeoutMs,
@@ -607,6 +623,7 @@ public class HTable implements Table {
 
   @Override
   public Result append(final Append append) throws IOException {
+
     checkHasFamilies(append);
     NoncedRegionServerCallable<Result> callable =
         new NoncedRegionServerCallable<Result>(this.connection, getName(), append.getRow(),
@@ -626,6 +643,7 @@ public class HTable implements Table {
 
   @Override
   public Result increment(final Increment increment) throws IOException {
+
     checkHasFamilies(increment);
     NoncedRegionServerCallable<Result> callable =
         new NoncedRegionServerCallable<Result>(this.connection, getName(), increment.getRow(),
@@ -664,6 +682,7 @@ public class HTable implements Table {
       throw new IOException(
           "Invalid arguments to incrementColumnValue", npe);
     }
+
 
     NoncedRegionServerCallable<Long> callable =
         new NoncedRegionServerCallable<Long>(this.connection, getName(), row,
