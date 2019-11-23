@@ -2164,8 +2164,6 @@ public class PerformanceEvaluation extends Configured implements Tool {
 
     @Override
     boolean testRow(final int i) throws IOException {
-      XTrace.startTask(true);
-      XTrace.getDefaultLogger().log("PUT ON EVAL MAPRED");
       byte[] row = generateRow(i);
       Put put = new Put(row);
       for (int family = 0; family < opts.families; family++) {

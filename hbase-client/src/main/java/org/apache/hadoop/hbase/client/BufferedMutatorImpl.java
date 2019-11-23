@@ -304,7 +304,9 @@ public class BufferedMutatorImpl implements BufferedMutator {
           // It means someone has gotten the ticker to run the flush.
           break;
         }
-        XTrace.getDefaultLogger().log("submit async proc");
+        XTrace.startTask(true);
+        XTrace.getDefaultLogger().tag("Buffered Mutations","Buffered Mutations");
+        XTrace.getDefaultLogger().log("submit mutations");
         asf = ap.submit(createTask(access));
       }
       // DON'T do the wait in the try-with-resources. Otherwise, the undealt mutations won't

@@ -47,10 +47,13 @@ import edu.brown.cs.systems.baggage.DetachedBaggage;
  */
 @InterfaceAudience.Private
 class SyncFuture {
+
+  public DetachedBaggage bag = null;
   // Implementation notes: I tried using a cyclicbarrier in here for handler and sync threads
   // to coordinate on but it did not give any obvious advantage and some issues with order in which
   // events happen.
   private static final long NOT_DONE = -1L;
+
 
   /**
    * The transaction id of this operation, monotonically increases.
@@ -72,7 +75,7 @@ class SyncFuture {
 
   private boolean forceSync;
 
-  private DetachedBaggage bag = null;
+
 
   /**
    * Call this method to clear old usage and get it ready for new deploy.
@@ -153,7 +156,9 @@ class SyncFuture {
                 + " ms for txid=" + this.txid + ", WAL system stuck?");
       }
     }
-    if (bag != null) Baggage.start(bag);
+    //TODO XTRACE if we start the bag here, sometimes traces get cut, so the tracked bag
+    // is sometimes not correct (belongs to the wrong trace
+    //if (bag != null) Baggage.start(bag);
     if (this.throwable != null) {
       throw new ExecutionException(this.throwable);
     }

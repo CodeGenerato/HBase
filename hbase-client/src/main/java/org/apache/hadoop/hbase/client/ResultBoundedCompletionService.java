@@ -26,6 +26,8 @@ import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import edu.brown.cs.systems.baggage.DetachedBaggage;
+import edu.brown.cs.systems.baggage.Baggage;
 import org.apache.hadoop.hbase.trace.TraceUtil;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.slf4j.Logger;
@@ -63,6 +65,7 @@ public class ResultBoundedCompletionService<V> {
     private final RpcRetryingCaller<T> retryingCaller;
     private boolean resultObtained = false;
     private final int replicaId;  // replica id
+    public DetachedBaggage bag = null;
 
 
     public QueueingFuture(RetryingCallable<T> future, int callTimeout, int id) {
@@ -72,18 +75,24 @@ public class ResultBoundedCompletionService<V> {
       this.replicaId = id;
     }
 
+
+    // TODO HBASE seems to have a datarace here: access result, result obtained from different threads
     @SuppressWarnings("unchecked")
     @Override
     public void run() {
+      //XTRACE we need this ugly redundant code because this is not properly locked
       try {
         if (!cancelled) {
           result = this.retryingCaller.callWithRetries(future, callTimeout);
+          QueueingFuture.this.bag = Baggage.fork();
           resultObtained = true;
         }
       } catch (Throwable t) {
+        QueueingFuture.this.bag = Baggage.fork();
         exeEx = new ExecutionException(t);
       } finally {
         synchronized (tasks) {
+
           // If this wasn't canceled then store the result.
           if (!cancelled) {
             completedTasks.add(QueueingFuture.this);
@@ -120,6 +129,7 @@ public class ResultBoundedCompletionService<V> {
       try {
         return get(1000, TimeUnit.DAYS);
       } catch (TimeoutException e) {
+        // TODO HBASE wtf?
         throw new RuntimeException("You did wait for 1000 days here?", e);
       }
     }
@@ -128,18 +138,24 @@ public class ResultBoundedCompletionService<V> {
     public T get(long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException {
       synchronized (tasks) {
+        //XTRACE we need this ugly redundant code because this is not properly locked
         if (resultObtained) {
+          Baggage.start(bag);
           return result;
         }
         if (exeEx != null) {
+          Baggage.start(bag);
           throw exeEx;
         }
         unit.timedWait(tasks, timeout);
       }
       if (resultObtained) {
+        Baggage.start(bag);
+
         return result;
       }
       if (exeEx != null) {
+        Baggage.start(bag);
         throw exeEx;
       }
 

@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+
+import edu.brown.cs.systems.baggage.DetachedBaggage;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.PrivateCellUtil;
@@ -55,6 +57,7 @@ class FSWALEntry extends Entry {
   private final transient RegionInfo regionInfo;
   private final transient Set<byte[]> familyNames;
   private final transient Optional<ServerCall<?>> rpcCall;
+  public DetachedBaggage bag = null;
 
   FSWALEntry(final long txid, final WALKeyImpl key, final WALEdit edit, final RegionInfo regionInfo,
     final boolean inMemstore, ServerCall<?> rpcCall) {

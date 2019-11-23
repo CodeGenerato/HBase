@@ -52,7 +52,7 @@ final class RingBufferTruck {
   void load(FSWALEntry entry) {
     this.entry = entry;
     this.type = Type.APPEND;
-    bag = Baggage.fork();
+    entry.bag = Baggage.fork();
   }
 
   /**
@@ -61,6 +61,7 @@ final class RingBufferTruck {
   void load(final SyncFuture syncFuture) {
     this.sync = syncFuture;
     this.type = Type.SYNC;
+    sync.bag = Baggage.fork();
   }
 
   /**
@@ -77,8 +78,6 @@ final class RingBufferTruck {
     FSWALEntry entry = this.entry;
     this.entry = null;
     this.type = Type.EMPTY;
-    if(bag != null) Baggage.start(bag);
-
     XTrace.getDefaultLogger().log("unload");
     return entry;
   }

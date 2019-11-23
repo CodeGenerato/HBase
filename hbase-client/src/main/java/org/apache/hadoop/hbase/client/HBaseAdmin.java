@@ -623,7 +623,7 @@ public class HBaseAdmin implements Admin {
   @Override
   public void createTable(final TableDescriptor desc, byte [][] splitKeys)
       throws IOException {
-    //XTrace.startTask(true);
+    XTrace.startTask(true);
     XTrace.getDefaultLogger().tag("Client create table", "CreateTable");
     get(createTableAsync(desc, splitKeys), syncWaitTimeout, TimeUnit.MILLISECONDS);
   }
