@@ -305,8 +305,8 @@ public class HTable implements Table {
    */
   @Override
   public ResultScanner getScanner(Scan scan) throws IOException {
-    XTrace.startTask(true);
-    XTrace.getDefaultLogger().tag("SCANNER","SCANNER");
+    //XTrace.startTask(true);
+    //XTrace.getDefaultLogger().tag("SCANNER","SCANNER");
     if (scan.getCaching() <= 0) {
       scan.setCaching(scannerCaching);
     }
@@ -368,8 +368,8 @@ public class HTable implements Table {
   }
 
   private Result get(Get get, final boolean checkExistenceOnly) throws IOException {
-    XTrace.startTask(true);
-    XTrace.getDefaultLogger().tag("GET","GET");
+    //XTrace.startTask(true);
+    //XTrace.getDefaultLogger().tag("GET","GET");
     // if we are changing settings to the get, clone it.
     if (get.isCheckExistenceOnly() != checkExistenceOnly || get.getConsistency() == null) {
       get = ReflectionUtils.newInstance(get.getClass(), get);
@@ -498,8 +498,8 @@ public class HTable implements Table {
 
   @Override
   public void delete(final Delete delete) throws IOException {
-    XTrace.startTask(true);
-    XTrace.getDefaultLogger().tag("DELETE", "DELETE");
+    //XTrace.startTask(true);
+    //XTrace.getDefaultLogger().tag("DELETE", "DELETE");
     ClientServiceCallable<Void> callable =
         new ClientServiceCallable<Void>(this.connection, getName(), delete.getRow(),
             this.rpcControllerFactory.newController(), delete.getPriority()) {
@@ -518,8 +518,8 @@ public class HTable implements Table {
   @Override
   public void delete(final List<Delete> deletes)
   throws IOException {
-    XTrace.startTask(true);
-    XTrace.getDefaultLogger().tag("DELETE", "DELETE");
+    //XTrace.startTask(true);
+    //XTrace.getDefaultLogger().tag("DELETE", "DELETE");
     Object[] results = new Object[deletes.size()];
     try {
       batch(deletes, results, writeRpcTimeoutMs);
@@ -541,9 +541,9 @@ public class HTable implements Table {
 
   @Override
   public void put(final Put put) throws IOException {
-    XTrace.startTask(true);
-    XTrace.getDefaultLogger().tag("PUT", "PUT");
-    XTrace.getDefaultLogger().log("start put");
+    //XTrace.startTask(true);
+    //XTrace.getDefaultLogger().tag("PUT", "PUT");
+    //XTrace.getDefaultLogger().log("start put");
 
     validatePut(put);
     ClientServiceCallable<Void> callable =
@@ -563,9 +563,9 @@ public class HTable implements Table {
 
   @Override
   public void put(final List<Put> puts) throws IOException {
-    XTrace.startTask(true);
-    XTrace.getDefaultLogger().tag("PUT MULTI", "PUT MULTI");
-    XTrace.getDefaultLogger().log("start put");
+    //XTrace.startTask(true);
+    //XTrace.getDefaultLogger().tag("PUT MULTI", "PUT MULTI");
+    //XTrace.getDefaultLogger().log("start put");
 
     for (Put put : puts) {
       validatePut(put);
@@ -580,8 +580,8 @@ public class HTable implements Table {
 
   @Override
   public void mutateRow(final RowMutations rm) throws IOException {
-    XTrace.startTask(true);
-    XTrace.getDefaultLogger().tag("MUTATE ROW","MUTATE ROW");
+    //XTrace.startTask(true);
+    //XTrace.getDefaultLogger().tag("MUTATE ROW","MUTATE ROW");
     CancellableRegionServerCallable<MultiResponse> callable =
       new CancellableRegionServerCallable<MultiResponse>(this.connection, getName(), rm.getRow(),
           rpcControllerFactory.newController(), writeRpcTimeoutMs,

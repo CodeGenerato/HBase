@@ -30,7 +30,16 @@
                 <artifactId>xtrace-client</artifactId>
                 <version>${tracingplane.version}</version>
             </dependency>
-
+          <dependency>
+              <groupId>edu.brown.cs.systems</groupId>
+              <artifactId>tracingplane-common</artifactId>
+              <version>${tracingplane.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>edu.brown.cs.systems</groupId>
+              <artifactId>tracingplane-client</artifactId>
+              <version>${tracingplane.version}</version>
+          </dependency>
 
          </dependencies>
 

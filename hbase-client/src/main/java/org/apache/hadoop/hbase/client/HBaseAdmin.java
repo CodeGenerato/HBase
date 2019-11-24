@@ -212,6 +212,7 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.ReplicationProtos.GetRe
 import org.apache.hadoop.hbase.shaded.protobuf.generated.ReplicationProtos.RemoveReplicationPeerResponse;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.ReplicationProtos.UpdateReplicationPeerConfigResponse;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.SnapshotProtos;
+import edu.brown.cs.systems.xtrace.XTraceBaggageInterface;
 
 /**
  * HBaseAdmin is no longer a client API. It is marked InterfaceAudience.Private indicating that
@@ -623,9 +624,12 @@ public class HBaseAdmin implements Admin {
   @Override
   public void createTable(final TableDescriptor desc, byte [][] splitKeys)
       throws IOException {
-    XTrace.startTask(true);
-    XTrace.getDefaultLogger().tag("Client create table", "CreateTable");
-    get(createTableAsync(desc, splitKeys), syncWaitTimeout, TimeUnit.MILLISECONDS);
+//    if(!XTraceBaggageInterface.hasTaskID()) {
+//      XTrace.startTask(true);
+//      XTrace.getDefaultLogger().tag("Client create table", "CreateTable");
+      get(createTableAsync(desc, splitKeys), syncWaitTimeout, TimeUnit.MILLISECONDS);
+//      Baggage.discard();
+//    }
   }
 
   @Override
