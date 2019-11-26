@@ -8,7 +8,7 @@ public aspect TaskStart
     //pointcut onTableCall(): call(* org.apache.hadoop.hbase.client.Table.*(..));
     //pointcut onTableCall(): call(public * org.apache.hadoop.hbase.client.HTable.*(..));
     //pointcut onAdminCall(): call(* org.apache.hadoop.hbase.client.Admin.*(..));
-    pointcut onAdminCall(): call(public void org.apache.hadoop.hbase.client.HBaseAdmin.*(..));
+    pointcut onAdminCall(): call(public * org.apache.hadoop.hbase.client.HBaseAdmin.*(..));
 
     pointcut onClient(): onAdminCall();
 
@@ -25,14 +25,14 @@ public aspect TaskStart
          //   Baggage.discard();
    //  }
 
-     void around(): onClient() {
+     Object around(): onClient() {
       if(!XTraceBaggageInterface.hasTaskID()){
                  XTrace.startTask(true);
                  String mname = thisJoinPoint.toShortString();
                  XTrace.getDefaultLogger().tag(mname, mname);
                  XTrace.getDefaultLogger().log("test before");
                  try{
-                 proceed();
+                 return proceed();
                  }
                  finally{
                  XTrace.getDefaultLogger().log("test after");
@@ -40,7 +40,7 @@ public aspect TaskStart
                  }
        }
        else{
-         proceed();
+         return proceed();
        }
      }
 

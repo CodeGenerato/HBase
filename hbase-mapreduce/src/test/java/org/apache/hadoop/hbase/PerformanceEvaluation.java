@@ -26,26 +26,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.Locale;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Queue;
-import java.util.Random;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import edu.brown.cs.systems.tracingplane.transit_layer.Baggage;
 import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -694,7 +688,7 @@ public class PerformanceEvaluation extends Configured implements Tool {
     BloomType bloomType = BloomType.ROW;
     int blockSize = HConstants.DEFAULT_BLOCKSIZE;
     DataBlockEncoding blockEncoding = DataBlockEncoding.NONE;
-    boolean valueRandom = false;
+    boolean  valueRandom = false;
     boolean valueZipf = false;
     int valueSize = DEFAULT_VALUE_LENGTH;
     int period = (this.perClientRunRows / 10) == 0? perClientRunRows: perClientRunRows / 10;
@@ -1100,6 +1094,24 @@ public class PerformanceEvaluation extends Configured implements Tool {
     public long getBufferSize() {
       return this.bufferSize;
     }
+
+    public String toString(){
+      Field[] allFields = this.getClass().getDeclaredFields();
+      Arrays.sort(allFields,(Field a, Field b)->a.getName().compareTo(b.getName()));
+
+      StringBuilder b= new StringBuilder();
+      for (Field field : allFields) {
+         b.append(field.getName());
+         b.append(": ");
+         try {
+           b.append(field.get(this));
+         }catch (IllegalAccessException e){
+           b.append("no access");
+         }
+         b.append(System.lineSeparator());
+      }
+      return b.toString();
+    }
   }
 
   /*
@@ -1157,6 +1169,11 @@ public class PerformanceEvaluation extends Configured implements Tool {
       if (options.isValueZipf()) {
         this.zipf = new RandomDistribution.Zipf(this.rand, 1, options.getValueSize(), 1.2);
       }
+      XTrace.startTask(true);
+      XTrace.getDefaultLogger().tag("CREATE TEST","CREATE TEST");
+      XTrace.getDefaultLogger().log(opts.toString());
+      Baggage.discard();
+
       LOG.info("Sampling 1 every " + everyN + " out of " + opts.perClientRunRows + " total rows.");
     }
 
@@ -1334,6 +1351,8 @@ public class PerformanceEvaluation extends Configured implements Tool {
      * Provides an extension point for tests that don't want a per row invocation.
      */
     void testTimed() throws IOException, InterruptedException {
+      XTrace.startTask(true);
+      XTrace.getDefaultLogger().tag("TEST","TEST");
       int startRow = getStartRow();
       int lastRow = getLastRow();
       TraceUtil.addSampler(traceSampler);
@@ -1345,6 +1364,7 @@ public class PerformanceEvaluation extends Configured implements Tool {
           long startTime = System.nanoTime();
           boolean requestSent = false;
           try (TraceScope scope = TraceUtil.createTrace("test row");){
+            //XTrace.getDefaultLogger().log("testRow");
             requestSent = testRow(i);
           }
           if ( (i - startRow) > opts.measureAfter) {
@@ -1979,8 +1999,10 @@ public class PerformanceEvaluation extends Configured implements Tool {
         if (opts.filterAll) {
           scan.setFilter(new FilterAllFilter());
         }
+        XTrace.getDefaultLogger().log("getScanner");
         this.testScanner = table.getScanner(scan);
       }
+
       Result r = testScanner.next();
       updateValueSize(r);
       return true;
@@ -2202,7 +2224,7 @@ public class PerformanceEvaluation extends Configured implements Tool {
           table.put(put);
         }
       } else {
-        XTrace.getDefaultLogger().log("PUT mutator");
+        //Xtrace.getDefaultLogger().log("PUT mutator");
         mutator.mutate(put);
       }
       return true;
