@@ -71,8 +71,6 @@ class RegionCoprocessorRpcChannel extends SyncCoprocessorRpcChannel {
       final Descriptors.MethodDescriptor method, final Message request,
       final Message responsePrototype)
   throws IOException {
-   // XTrace.startTask(true);
-    XTrace.getDefaultLogger().log("callExecService");
     if (LOG.isTraceEnabled()) {
       LOG.trace("Call: " + method.getName() + ", " + request.toString());
     }

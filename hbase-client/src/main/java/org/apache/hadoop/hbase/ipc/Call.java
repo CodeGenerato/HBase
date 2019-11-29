@@ -42,7 +42,7 @@ class Call {
   final int id; // call id
   final Message param; // rpc request method param object
 
-  public DetachedBaggage bag = null;
+  public volatile DetachedBaggage bag = null;
 
   /**
    * Optionally has cells when making call. Optionally has cells set on response. Used passing cells

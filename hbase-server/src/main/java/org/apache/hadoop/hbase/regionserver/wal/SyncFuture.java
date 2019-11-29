@@ -48,7 +48,7 @@ import edu.brown.cs.systems.baggage.DetachedBaggage;
 @InterfaceAudience.Private
 class SyncFuture {
 
-  public DetachedBaggage bag = null;
+  public volatile DetachedBaggage bag = null;
   // Implementation notes: I tried using a cyclicbarrier in here for handler and sync threads
   // to coordinate on but it did not give any obvious advantage and some issues with order in which
   // events happen.
@@ -93,6 +93,7 @@ class SyncFuture {
     this.doneTxid = NOT_DONE;
     this.txid = txid;
     this.throwable = null;
+    this.bag = null;
     return this;
   }
 
@@ -132,10 +133,8 @@ class SyncFuture {
             new IllegalStateException("done txid=" + txid + ", my txid=" + this.txid);
       }
     }
-    //TODO XTRACE join baggage with notified thread here
-    // Mark done.
-    this.doneTxid = txid;
     bag = Baggage.fork();
+    this.doneTxid = txid;
     // Wake up waiting threads.
     notify();
     return true;
@@ -156,9 +155,9 @@ class SyncFuture {
                 + " ms for txid=" + this.txid + ", WAL system stuck?");
       }
     }
-    //TODO XTRACE if we start the bag here, sometimes traces get cut, so the tracked bag
+    // TODO XTRACE if we start the bag here, sometimes traces get cut, so the tracked bag
     // is sometimes not correct (belongs to the wrong trace
-    //if (bag != null) Baggage.start(bag);
+    Baggage.start(bag);
     if (this.throwable != null) {
       throw new ExecutionException(this.throwable);
     }

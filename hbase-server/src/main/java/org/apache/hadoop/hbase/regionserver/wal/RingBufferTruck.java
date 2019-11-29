@@ -78,7 +78,6 @@ final class RingBufferTruck {
     FSWALEntry entry = this.entry;
     this.entry = null;
     this.type = Type.EMPTY;
-    XTrace.getDefaultLogger().log("unload");
     return entry;
   }
 

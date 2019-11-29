@@ -353,11 +353,6 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
     final long epoch = (long) epochAndState >>> 2L;
     addListener(writer.sync(), (result, error) -> {
      // TODO XTRACE: this is executed by a new thread, we have to transfer baggage over the result
-      // + this callback marks the sync as done and syncs get deleted, the outer sync thread just waits until the sync
-      // queue is empty, so we need to memorize which syncs are done. it is enough to store the baggage of the deleted
-      // snycs in a set and check on return of the outer thread which baggages originated from the outer thread based on the baggage id
-      // we join these
-
       if (error != null) {
         syncFailed(epoch, error);
       } else {
@@ -443,7 +438,7 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
     DetachedBaggage bag= Baggage.stop();
     for (Iterator<FSWALEntry> iter = toWriteAppends.iterator(); iter.hasNext();) {
       FSWALEntry entry = iter.next();
-      if(entry.bag != null) edu.brown.cs.systems.baggage.Baggage.start(entry.bag);
+      Baggage.start(entry.bag);
       boolean appended;
       try {
         appended = append(writer, entry);
@@ -497,13 +492,24 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
     // whether to issue a sync in the caller method.
   }
 
+  private volatile DetachedBaggage bag = null;
   private void consume() {
     // TODO XTRACE, we cannot trace per request here
     // because many requests are flushed together, we can only track the start and end event but not the actual file write
     // a file write cannot be associated with one request
-    //XTrace.startTask(true);
-    //XTrace.getDefaultLogger().tag("consume WAL ops", "consume WAL Ops");
     consumeLock.lock();
+    // XTRACE this is a hack to keep everything on one trace
+    if(bag==null) {
+      XTrace.startTask(true);
+      XTrace.getDefaultLogger().tag("consume WAL ops", "consume WAL Ops");
+      bag = Baggage.fork();
+    }
+    else{
+      Baggage.start(bag);
+    }
+    XTrace.getDefaultLogger().log("consume start");
+
+
     try {
       int currentEpochAndState = epochAndState;
       if (writerBroken(currentEpochAndState)) {
@@ -523,7 +529,7 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
       }
     } finally {
       consumeLock.unlock();
-    }try {
+    }
       long nextCursor = waitingConsumePayloadsGatingSequence.get() + 1;
       for (long cursorBound = waitingConsumePayloads.getCursor(); nextCursor <= cursorBound;
            nextCursor++) {
@@ -551,6 +557,7 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
       if (toWriteAppends.isEmpty()) {
         if (waitingConsumePayloadsGatingSequence.get() == waitingConsumePayloads.getCursor()) {
           consumerScheduled.set(false);
+          // TODO HBASE bad code! use a lock here!
           // recheck here since in append and sync we do not hold the consumeLock. Thing may
           // happen like
           // 1. we check cursor, no new entry
@@ -576,9 +583,7 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
 
       // reschedule if we still have something to write.
       consumeExecutor.execute(consumer);
-    }finally {
-      XTrace.getDefaultLogger().log("consume done");
-    }
+
   }
 
   private boolean shouldScheduleConsumer() {
@@ -642,11 +647,6 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
       }
       XTrace.getDefaultLogger().log("waiting for sync done");
       blockOnSync(future);
-      //TODO XTRACE wait on sync, need baggage prop here
-      // writes were issued before, in this sync method we wait for the flush
-      // here a truck is published that contains the future (callback) for the txid we are waiting for
-      // In consume(), a thread syncs open writes and marks futures as done (in appendAndSync finishSync is called)
-      // when this happens we return here.
       XTrace.getDefaultLogger().log("sync done");
     }
   }

@@ -83,46 +83,48 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
 
   private void writeRequest(ChannelHandlerContext ctx, Call call, ChannelPromise promise)
       throws IOException {
+    try {
+      if(call.bag!=null) Baggage.start(call.bag);
 
-    if(call.bag!=null) Baggage.start(call.bag);
-
-    id2Call.put(call.id, call);
-    ByteBuf cellBlock = cellBlockBuilder.buildCellBlock(codec, compressor, call.cells, ctx.alloc());
-    CellBlockMeta cellBlockMeta;
-    if (cellBlock != null) {
-      CellBlockMeta.Builder cellBlockMetaBuilder = CellBlockMeta.newBuilder();
-      cellBlockMetaBuilder.setLength(cellBlock.writerIndex());
-      cellBlockMeta = cellBlockMetaBuilder.build();
-    } else {
-      cellBlockMeta = null;
-    }
-    XTrace.getDefaultLogger().log("Building Header");
-    RequestHeader requestHeader = IPCUtil.buildRequestHeader(call, cellBlockMeta);
-
-    int sizeWithoutCellBlock = IPCUtil.getTotalSizeWhenWrittenDelimited(requestHeader, call.param);
-    int totalSize = cellBlock != null ? sizeWithoutCellBlock + cellBlock.writerIndex()
-        : sizeWithoutCellBlock;
-    ByteBuf buf = ctx.alloc().buffer(sizeWithoutCellBlock + 4);
-    buf.writeInt(totalSize);
-    try (ByteBufOutputStream bbos = new ByteBufOutputStream(buf)) {
-      requestHeader.writeDelimitedTo(bbos);
-      if (call.param != null) {
-        call.param.writeDelimitedTo(bbos);
-      }
+      id2Call.put(call.id, call);
+      ByteBuf cellBlock = cellBlockBuilder.buildCellBlock(codec, compressor, call.cells, ctx.alloc());
+      CellBlockMeta cellBlockMeta;
       if (cellBlock != null) {
-        ChannelPromise withoutCellBlockPromise = ctx.newPromise();
-        ctx.write(buf, withoutCellBlockPromise);
-        ChannelPromise cellBlockPromise = ctx.newPromise();
-        ctx.write(cellBlock, cellBlockPromise);
-        PromiseCombiner combiner = new PromiseCombiner();
-        combiner.addAll(withoutCellBlockPromise, cellBlockPromise);
-        combiner.finish(promise);
+        CellBlockMeta.Builder cellBlockMetaBuilder = CellBlockMeta.newBuilder();
+        cellBlockMetaBuilder.setLength(cellBlock.writerIndex());
+        cellBlockMeta = cellBlockMetaBuilder.build();
       } else {
-        ctx.write(buf, promise);
+        cellBlockMeta = null;
+      }
+      XTrace.getDefaultLogger().log("start RPC: " + call);
+      RequestHeader requestHeader = IPCUtil.buildRequestHeader(call, cellBlockMeta);
+
+      int sizeWithoutCellBlock = IPCUtil.getTotalSizeWhenWrittenDelimited(requestHeader, call.param);
+      int totalSize = cellBlock != null ? sizeWithoutCellBlock + cellBlock.writerIndex()
+              : sizeWithoutCellBlock;
+      ByteBuf buf = ctx.alloc().buffer(sizeWithoutCellBlock + 4);
+      buf.writeInt(totalSize);
+      try (ByteBufOutputStream bbos = new ByteBufOutputStream(buf)) {
+        requestHeader.writeDelimitedTo(bbos);
+        if (call.param != null) {
+          call.param.writeDelimitedTo(bbos);
+        }
+        if (cellBlock != null) {
+          ChannelPromise withoutCellBlockPromise = ctx.newPromise();
+          ctx.write(buf, withoutCellBlockPromise);
+          ChannelPromise cellBlockPromise = ctx.newPromise();
+          ctx.write(cellBlock, cellBlockPromise);
+          PromiseCombiner combiner = new PromiseCombiner();
+          combiner.addAll(withoutCellBlockPromise, cellBlockPromise);
+          combiner.finish(promise);
+        } else {
+          ctx.write(buf, promise);
+        }
       }
     }
-    // TODO XTRACE check if this is ok an do finally
-    Baggage.discard();
+    finally{
+      Baggage.discard();
+    }
   }
 
   @Override
@@ -141,10 +143,10 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
     ResponseHeader responseHeader = ResponseHeader.parseDelimitedFrom(in);
 
     try {
-      // XTRACE
-      if (responseHeader.getTraceBaggage() != null) Baggage.start(responseHeader.getTraceBaggage().toByteArray());
-      XTrace.getDefaultLogger().log("response header read: " + responseHeader.toString());
-
+      // TODO XTRACE better solution for to byte and from byte?
+      if (responseHeader.getTraceBaggage() != null) {
+        Baggage.start(responseHeader.getTraceBaggage().toByteArray());
+      }
       int id = responseHeader.getCallId();
       if (LOG.isTraceEnabled()) {
         LOG.trace("got response header " + TextFormat.shortDebugString(responseHeader)

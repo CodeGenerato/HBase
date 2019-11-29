@@ -38,7 +38,7 @@ import edu.brown.cs.systems.baggage.DetachedBaggage;
 public class BlockingRpcCallback<R> implements RpcCallback<R> {
   private R result;
   private boolean resultSet = false;
-  private DetachedBaggage bag = null;
+  private volatile DetachedBaggage bag = null;
   /**
    * Called on completion of the RPC call with the response object, or {@code null} in the case of
    * an error.
@@ -70,7 +70,7 @@ public class BlockingRpcCallback<R> implements RpcCallback<R> {
         throw exception;
       }
     }
-    if(bag != null) Baggage.start(bag);
+    Baggage.start(bag);
     return result;
   }
 }

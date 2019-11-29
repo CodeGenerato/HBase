@@ -147,6 +147,8 @@ message RequestHeader {
   optional uint32 priority = 6;
   optional uint32 timeout = 7;
   // XTRACE
+  // Type is hbase.thirdparty.protobuf.bytestring, so not java bytestring
+  // this cannot be changed here
   optional bytes trace_baggage = 8;
 }
 

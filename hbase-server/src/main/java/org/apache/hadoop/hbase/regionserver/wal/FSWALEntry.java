@@ -57,7 +57,7 @@ class FSWALEntry extends Entry {
   private final transient RegionInfo regionInfo;
   private final transient Set<byte[]> familyNames;
   private final transient Optional<ServerCall<?>> rpcCall;
-  public DetachedBaggage bag = null;
+  public volatile DetachedBaggage bag = null;
 
   FSWALEntry(final long txid, final WALKeyImpl key, final WALEdit edit, final RegionInfo regionInfo,
     final boolean inMemstore, ServerCall<?> rpcCall) {

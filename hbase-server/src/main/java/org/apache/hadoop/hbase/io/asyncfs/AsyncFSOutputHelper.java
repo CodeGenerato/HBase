@@ -47,7 +47,7 @@ public final class AsyncFSOutputHelper {
       boolean createParent, short replication, long blockSize, EventLoopGroup eventLoopGroup,
       Class<? extends Channel> channelClass)
       throws IOException, CommonFSUtils.StreamLacksCapabilityException {
-    //XTRACE IMPORTANT:
+    // XTRACE IMPORTANT:
     // FanOutOneBlock was disabled because this is too hard to instrument for now.
     // FanOutOneBlock provides higher performance writes for small writes.
     // It provides direct write to datanodes and does not use any RPCHeaders which could be used to pass Baggage

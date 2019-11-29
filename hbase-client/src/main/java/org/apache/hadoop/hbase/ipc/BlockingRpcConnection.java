@@ -153,7 +153,7 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
             + " to the write queue. callsToWrite.size()=" + callsToWrite.size());
       }
 
-      XTrace.getDefaultLogger().log("Enqueue RPC call for sending: "+call);
+      XTrace.getDefaultLogger().log("Enqueue RPC for sending: "+call);
       call.bag=Baggage.fork();
       callsToWrite.offer(call);
       BlockingRpcConnection.this.notifyAll();
@@ -188,22 +188,26 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
             continue;
           }
           Call call = callsToWrite.poll();
-          Baggage.start(call.bag);
-          // TODO XTRACE discarding not needed but nice
-          if (call.isDone()) {
-            continue;
-          }
-          try {
-            tracedWriteRequest(call);
-          } catch (IOException e) {
-            // exception here means the call has not been added to the pendingCalls yet, so we need
-            // to fail it by our own.
-            if (LOG.isDebugEnabled()) {
-              LOG.debug("call write error for call #" + call.id, e);
-            }
-            call.setException(e);
-            closeConn(e);
-          }
+         try {
+           Baggage.start(call.bag);
+           // TODO XTRACE discarding not needed but nice
+           if (call.isDone()) {
+             continue;
+           }
+           try {
+             tracedWriteRequest(call);
+           } catch (IOException e) {
+             // exception here means the call has not been added to the pendingCalls yet, so we need
+             // to fail it by our own.
+             if (LOG.isDebugEnabled()) {
+               LOG.debug("call write error for call #" + call.id, e);
+             }
+             call.setException(e);
+             closeConn(e);
+           }
+         }finally {
+           Baggage.discard();
+         }
         }
       }
     }
@@ -615,7 +619,7 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
       } else {
         cellBlockMeta = null;
       }
-      XTrace.getDefaultLogger().log("Prepare Package for RPC Call: "+call);
+      XTrace.getDefaultLogger().log("start RPC: "+call);
       RequestHeader requestHeader = buildRequestHeader(call, cellBlockMeta);
 
       setupIOstreams();
@@ -664,7 +668,7 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
       ResponseHeader responseHeader = ResponseHeader.parseDelimitedFrom(in);
 
       if(responseHeader.getTraceBaggage()!=null) Baggage.start(responseHeader.getTraceBaggage().toByteArray());
-      XTrace.getDefaultLogger().log("response header read: "+responseHeader.toString());
+      XTrace.getDefaultLogger().log("RPC response: "+responseHeader.toString());
       int id = responseHeader.getCallId();
       call = calls.remove(id); // call.done have to be set before leaving this method
       expectedCall = (call != null && !call.isDone());
@@ -711,7 +715,7 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
           cellBlockScanner = this.rpcClient.cellBlockBuilder.createCellScanner(this.codec,
             this.compressor, cellBlock);
         }
-        XTrace.getDefaultLogger().log("Read response and put it in call: "+call);
+
         call.setResponse(value, cellBlockScanner);
         call.callStats.setResponseSizeBytes(totalSize);
         call.callStats
@@ -788,7 +792,7 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
   public synchronized void sendRequest(final Call call, HBaseRpcController pcrc)
       throws IOException {
 
-    XTrace.getDefaultLogger().log("sendRequest in: "+this.getClass());
+    XTrace.getDefaultLogger().log("send RPC");
 
     pcrc.notifyOnCancel(new RpcCallback<Object>() {
 

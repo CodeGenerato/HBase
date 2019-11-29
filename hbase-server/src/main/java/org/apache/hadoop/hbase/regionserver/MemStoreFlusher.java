@@ -328,6 +328,7 @@ class MemStoreFlusher implements FlushRequester {
 
     @Override
     public void run() {
+      // TODO XTRACE flusher poll flush requests, close gap
       while (!server.isStopped()) {
         FlushQueueEntry fqe = null;
         try {

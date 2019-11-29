@@ -979,7 +979,7 @@ public abstract class AbstractFSWAL<W extends WriterBase> implements WAL {
       throw new IOException(
           "Cannot append; log is closed, regionName = " + hri.getRegionNameAsString());
     }
-    XTrace.getDefaultLogger().log("Pub to RingBuffer");
+
     MutableLong txidHolder = new MutableLong();
     MultiVersionConcurrencyControl.WriteEntry we = key.getMvcc().begin(() -> {
       txidHolder.setValue(ringBuffer.next());
@@ -992,6 +992,7 @@ public abstract class AbstractFSWAL<W extends WriterBase> implements WAL {
       entry.stampRegionSequenceId(we);
       ringBuffer.get(txid).load(entry);
     } finally {
+      XTrace.getDefaultLogger().log("append to ring buffer");
       ringBuffer.publish(txid);
     }
     return txid;

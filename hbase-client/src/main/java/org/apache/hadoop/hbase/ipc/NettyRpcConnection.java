@@ -67,7 +67,7 @@ import edu.brown.cs.systems.xtrace.XTrace;
 import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
 
 import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
+
 
 /**
  * RPC connection implementation based on netty.
@@ -310,9 +310,6 @@ class NettyRpcConnection extends RpcConnection {
       throw new IOException("Can not send request because relogin is in progress.");
     }
 
-
-    XTrace.getDefaultLogger().log("sendRequest in: "+this.getClass());
-
     hrc.notifyOnCancel(new RpcCallback<Object>() {
 
       @Override
@@ -336,7 +333,7 @@ class NettyRpcConnection extends RpcConnection {
           }
           scheduleTimeoutTask(call);
           final Channel ch = channel;
-          XTrace.getDefaultLogger().log("write Request: "+this.getClass());
+          XTrace.getDefaultLogger().log("send RPC");
           call.bag=Baggage.fork();
 
           // We must move the whole writeAndFlush call inside event loop otherwise there will be a

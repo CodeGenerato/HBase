@@ -201,6 +201,7 @@ public class CallRunner {
         this.rpcServer.addCallSize(call.getSize() * -1);
       }
       cleanup();
+      Baggage.discard();
     }
   }
 

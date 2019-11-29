@@ -305,8 +305,6 @@ public class HTable implements Table {
    */
   @Override
   public ResultScanner getScanner(Scan scan) throws IOException {
-    //XTrace.startTask(true);
-    //XTrace.getDefaultLogger().tag("SCANNER","SCANNER");
     if (scan.getCaching() <= 0) {
       scan.setCaching(scannerCaching);
     }
@@ -323,15 +321,18 @@ public class HTable implements Table {
     }
 
     if (scan.isReversed()) {
+      XTrace.getDefaultLogger().log("reversed client scanner");
       return new ReversedClientScanner(getConfiguration(), scan, getName(),
         this.connection, this.rpcCallerFactory, this.rpcControllerFactory,
         pool, connConfiguration.getReplicaCallTimeoutMicroSecondScan());
     } else {
       if (async) {
+        XTrace.getDefaultLogger().log("async client prefetch scanner");
         return new ClientAsyncPrefetchScanner(getConfiguration(), scan, getName(), this.connection,
             this.rpcCallerFactory, this.rpcControllerFactory,
             pool, connConfiguration.getReplicaCallTimeoutMicroSecondScan());
       } else {
+        XTrace.getDefaultLogger().log("simple client scanner");
         return new ClientSimpleScanner(getConfiguration(), scan, getName(), this.connection,
             this.rpcCallerFactory, this.rpcControllerFactory,
             pool, connConfiguration.getReplicaCallTimeoutMicroSecondScan());

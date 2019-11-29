@@ -178,7 +178,7 @@ public class BufferedMutatorImpl implements BufferedMutator {
   @Override
   public void mutate(Mutation m) throws InterruptedIOException,
       RetriesExhaustedWithDetailsException {
-    XTrace.getDefaultLogger().log("PUT mutator");
+    XTrace.getDefaultLogger().log("mutate");
     mutate(Collections.singletonList(m));
   }
 
@@ -203,7 +203,6 @@ public class BufferedMutatorImpl implements BufferedMutator {
     currentWriteBufferSize.addAndGet(toAddSize);
     writeAsyncBuffer.addAll(ms);
     undealtMutationCount.addAndGet(toAddCount);
-    XTrace.getDefaultLogger().log("flush");
     doFlush(false);
   }
 
@@ -292,6 +291,7 @@ public class BufferedMutatorImpl implements BufferedMutator {
    */
   private void doFlush(boolean flushAll) throws InterruptedIOException,
       RetriesExhaustedWithDetailsException {
+    XTrace.getDefaultLogger().log("flush");
     List<RetriesExhaustedWithDetailsException> errors = new ArrayList<>();
     while (true) {
       if (!flushAll && currentWriteBufferSize.get() <= writeBufferSize) {

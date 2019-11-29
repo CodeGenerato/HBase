@@ -28,6 +28,7 @@ import java.util.concurrent.TimeoutException;
 
 import edu.brown.cs.systems.baggage.DetachedBaggage;
 import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.hadoop.hbase.trace.TraceUtil;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.slf4j.Logger;
@@ -65,7 +66,7 @@ public class ResultBoundedCompletionService<V> {
     private final RpcRetryingCaller<T> retryingCaller;
     private boolean resultObtained = false;
     private final int replicaId;  // replica id
-    public DetachedBaggage bag = null;
+    public volatile DetachedBaggage bag = null;
 
 
     public QueueingFuture(RetryingCallable<T> future, int callTimeout, int id) {
@@ -76,13 +77,15 @@ public class ResultBoundedCompletionService<V> {
     }
 
 
-    // TODO HBASE seems to have a datarace here: access result, result obtained from different threads
+    // TODO HBASE seems to have a datarace here: access result, result obtained from different threads concurrently, no lock
     @SuppressWarnings("unchecked")
     @Override
     public void run() {
-      //XTRACE we need this ugly redundant code because this is not properly locked
       try {
+        Baggage.start(bag);
+        // XTRACE we need this ugly redundant code because this is not properly locked
         if (!cancelled) {
+
           result = this.retryingCaller.callWithRetries(future, callTimeout);
           QueueingFuture.this.bag = Baggage.fork();
           resultObtained = true;
@@ -101,6 +104,7 @@ public class ResultBoundedCompletionService<V> {
           // Notify just in case there was someone waiting and this was canceled.
           // That shouldn't happen but better safe than sorry.
           tasks.notify();
+          Baggage.discard();
         }
       }
     }
@@ -111,6 +115,9 @@ public class ResultBoundedCompletionService<V> {
       retryingCaller.cancel();
       if (future instanceof Cancellable) ((Cancellable)future).cancel();
       cancelled = true;
+      Baggage.start(bag);
+      // XTRACE start/join makes sense, if a thread other than the "submit" thread is calling cancel here
+      // otherwise we just join the baggage we alread have in the thread
       return true;
     }
 
@@ -129,7 +136,7 @@ public class ResultBoundedCompletionService<V> {
       try {
         return get(1000, TimeUnit.DAYS);
       } catch (TimeoutException e) {
-        // TODO HBASE wtf?
+        // TODO HBASE this is not a conversation?
         throw new RuntimeException("You did wait for 1000 days here?", e);
       }
     }
@@ -138,7 +145,7 @@ public class ResultBoundedCompletionService<V> {
     public T get(long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException {
       synchronized (tasks) {
-        //XTRACE we need this ugly redundant code because this is not properly locked
+        // XTRACE we need this ugly redundant code because this is not properly locked
         if (resultObtained) {
           Baggage.start(bag);
           return result;
@@ -184,6 +191,7 @@ public class ResultBoundedCompletionService<V> {
 
   public void submit(RetryingCallable<V> task, int callTimeout, int id) {
     QueueingFuture<V> newFuture = new QueueingFuture<>(task, callTimeout, id);
+    newFuture.bag= Baggage.fork();
     executor.execute(TraceUtil.wrap(newFuture, "ResultBoundedCompletionService.submit"));
     tasks[id] = newFuture;
   }

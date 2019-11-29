@@ -1711,7 +1711,7 @@ public class ProcedureExecutor<TEnvironment> {
     Preconditions.checkArgument(procedure.getState() == ProcedureState.RUNNABLE,
         "NOT RUNNABLE! " + procedure.toString());
 
-    XTrace.getDefaultLogger().log("Procedure is executed:"+ procedure.getProcName());
+    XTrace.getDefaultLogger().log("Procedure is executed: "+ procedure.getProcName());
     // Procedures can suspend themselves. They skip out by throwing a ProcedureSuspendedException.
     // The exception is caught below and then we hurry to the exit without disturbing state. The
     // idea is that the processing of this procedure will be unsuspended later by an external event

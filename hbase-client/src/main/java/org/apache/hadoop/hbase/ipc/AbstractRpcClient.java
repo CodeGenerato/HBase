@@ -338,7 +338,7 @@ public abstract class AbstractRpcClient<T extends RpcConnection> implements RpcC
     Message val;
     try {
       val = done.get();
-      XTrace.getDefaultLogger().log("call done, return result from callback");
+      XTrace.getDefaultLogger().log(md+" result received");
     } catch (IOException e) {
       throw new ServiceException(e);
     }
@@ -429,7 +429,7 @@ public abstract class AbstractRpcClient<T extends RpcConnection> implements RpcC
       cs.setConcurrentCallsPerServer(count);
 
 
-      XTrace.getDefaultLogger().log("Send client RPC", md.getName());
+      XTrace.getDefaultLogger().log("send RPC", md.getName());
 
       T connection = getConnection(remoteId);
       connection.sendRequest(call, hrc);

@@ -386,6 +386,10 @@ public class FanOutOneBlockAsyncDFSOutput implements AsyncFSOutput {
     return locations;
   }
 
+
+  // XTRACE this DFS output is actually used in HBASE
+  // It was subsituted with a standard DFSoutputstream, since leightweight low level packages make it hard to
+  // propagate baggage
   private void flushBuffer(CompletableFuture<Long> future, ByteBuf dataBuf,
       long nextPacketOffsetInBlock, boolean syncBlock) {
 
@@ -412,7 +416,7 @@ public class FanOutOneBlockAsyncDFSOutput implements AsyncFSOutput {
       waitingAckQueue.removeFirst();
       return;
     }
-    //XTRACE currently this output class is not used, since is to hard to instrument (no RPC headers etc)
+    // XTRACE currently this output class is not used, since is to hard to instrument (no RPC headers etc)
     //this is the point where datanodes are accessed to perform a lightweight low latency write
     //Baggage could be added to some buffer
     XTrace.getDefaultLogger().log("write packets "+headerBuf.retainedDuplicate()+" "+dataBuf.retainedDuplicate());

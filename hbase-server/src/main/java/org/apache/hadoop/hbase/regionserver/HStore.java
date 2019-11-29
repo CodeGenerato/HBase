@@ -129,6 +129,7 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.WALProtos.CompactionDes
  */
 @InterfaceAudience.Private
 public class HStore implements Store, HeapSize, StoreConfigInformation, PropagatingConfigurationObserver {
+  // TODO XTRACE instrumentation
   public static final String MEMSTORE_CLASS_NAME = "hbase.regionserver.memstore.class";
   public static final String COMPACTCHECKER_INTERVAL_MULTIPLIER_KEY =
       "hbase.server.compactchecker.interval.multiplier";
