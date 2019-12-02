@@ -21,6 +21,7 @@ import static org.apache.hadoop.hbase.client.ConnectionUtils.calcEstimatedSize;
 import static org.apache.hadoop.hbase.client.ConnectionUtils.createScanResultCache;
 import static org.apache.hadoop.hbase.client.ConnectionUtils.incRegionCountMetrics;
 
+import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.hbase.thirdparty.com.google.common.annotations.VisibleForTesting;
 
 import java.io.IOException;
@@ -137,7 +138,9 @@ public abstract class ClientScanner extends AbstractClientScanner {
     this.rpcControllerFactory = controllerFactory;
 
     this.conf = conf;
-
+    // TODO XTRACE Monitor scanner settings
+    //ReflectionToStringBuilder.toString(this);
+    XTrace.getDefaultLogger().log("SCANNER SETTINGS:");
     this.scanResultCache = createScanResultCache(scan);
     initCache();
   }

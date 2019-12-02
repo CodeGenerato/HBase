@@ -1784,6 +1784,9 @@ public class PerformanceEvaluation extends Configured implements Tool {
       if (opts.filterAll) {
         scan.setFilter(new FilterAllFilter());
       }
+      XTrace.startTask(true);
+      XTrace.getDefaultLogger().tag("RANDOM SCAN","RANDOM SCAN");
+
       Result r = null;
       int count = 0;
       ResultScanner s = this.table.getScanner(scan);
