@@ -98,7 +98,7 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
       } else {
         cellBlockMeta = null;
       }
-      XTrace.getDefaultLogger().log("start RPC: " + call);
+      XTraceUtil.getDebugLogger().log("start RPC: " + call);
       RequestHeader requestHeader = IPCUtil.buildRequestHeader(call, cellBlockMeta);
 
       int sizeWithoutCellBlock = IPCUtil.getTotalSizeWhenWrittenDelimited(requestHeader, call.param);

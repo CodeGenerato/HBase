@@ -48,6 +48,7 @@ import org.apache.hadoop.hbase.client.backoff.ServerStatistics;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.exceptions.ClientExceptionsUtil;
 import org.apache.hadoop.hbase.trace.TraceUtil;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.htrace.core.Tracer;
@@ -543,11 +544,11 @@ class AsyncRequestFutureImpl<CResult> implements AsyncRequestFuture {
       for (Runnable runnable : runnables) {
         if ((--actionsRemaining == 0) && reuseThread
             && numAttempt % HConstants.DEFAULT_HBASE_CLIENT_RETRIES_NUMBER != 0) {
-          XTrace.getDefaultLogger().log("run multiaction");
+          XTraceUtil.getDebugLogger().log("run multiaction");
           runnable.run();
         } else {
           try {
-            XTrace.getDefaultLogger().log("submit multiaction");
+            XTraceUtil.getDebugLogger().log("submit multiaction");
             pool.submit(runnable);
           } catch (Throwable t) {
             if (t instanceof RejectedExecutionException) {

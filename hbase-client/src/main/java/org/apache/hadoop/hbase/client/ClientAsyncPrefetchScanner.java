@@ -173,7 +173,7 @@ public class ClientAsyncPrefetchScanner extends ClientSimpleScanner {
     public void run() {
       //TODO XTrace async prefetcher as own task
       //XTrace.startTask(true);
-      //XTrace.getDefaultLogger().tag("Scann Prefetcher", "Scan Prefetcher");
+      //XTraceUtil.getDebugLogger().tag("Scann Prefetcher", "Scan Prefetcher");
       while (!closed) {
 
         boolean succeed = false;
@@ -182,7 +182,7 @@ public class ClientAsyncPrefetchScanner extends ClientSimpleScanner {
           while (!prefetchCondition()) {
             notFull.await();
           }
-         // XTrace.getDefaultLogger().log("load cache");
+         // XTraceUtil.getDebugLogger().log("load cache");
           loadCache();
           succeed = true;
         } catch (Exception e) {

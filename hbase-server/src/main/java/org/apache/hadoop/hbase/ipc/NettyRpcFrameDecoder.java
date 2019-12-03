@@ -176,7 +176,7 @@ public class NettyRpcFrameDecoder extends ByteToMessageDecoder {
         Baggage.start(rq.getTraceBaggage().toByteArray());
       }
 
-      XTrace.getDefaultLogger().log("response header read: " + rq.toString());
+      XTraceUtil.getDebugLogger().log("response header read: " + rq.toString());
       return rq;
     } finally {
       msg.release();

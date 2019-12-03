@@ -29,6 +29,7 @@ import org.apache.hadoop.hbase.ExtendedCellBuilderFactory;
 import org.apache.hadoop.hbase.HBaseInterfaceAudience;
 import org.apache.hadoop.hbase.io.ByteBuffInputStream;
 import org.apache.hadoop.hbase.nio.ByteBuff;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.yetus.audience.InterfaceAudience;
 
@@ -50,7 +51,7 @@ public class CellCodec implements Codec {
 
     @Override
     public void write(Cell cell) throws IOException {
-      XTrace.getDefaultLogger().log("write to outputstream");
+      XTraceUtil.getDebugLogger().log("write to outputstream");
       checkFlushed();
       // Row
       write(cell.getRowArray(), cell.getRowOffset(), cell.getRowLength());

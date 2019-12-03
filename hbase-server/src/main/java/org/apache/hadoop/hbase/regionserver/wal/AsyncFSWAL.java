@@ -511,13 +511,13 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
     // XTRACE this is a hack to keep everything on one trace
     if(bag==null) {
       XTrace.startTask(true);
-      XTrace.getDefaultLogger().tag("Batched WAL OP", "Batched WAL OP");
+      XTraceUtil.getDebugLogger().tag("Batched WAL OP", "Batched WAL OP");
       bag = Baggage.fork();
     }
     else{
       Baggage.join(bag);
     }
-    XTrace.getDefaultLogger().log("consume start");
+    XTraceUtil.getDebugLogger().log("consume start");
 
 
     try {
@@ -612,7 +612,7 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
     if (shouldScheduleConsumer()) {
       consumeExecutor.execute(consumer);
     }
-    XTrace.getDefaultLogger().log("append done");
+    XTraceUtil.getDebugLogger().log("append done");
     return txid;
   }
 
@@ -632,7 +632,7 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
         consumeExecutor.execute(consumer);
       }
       blockOnSync(future);
-      XTrace.getDefaultLogger().log("sync done");
+      XTraceUtil.getDebugLogger().log("sync done");
     }
   }
 
@@ -655,9 +655,9 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
       if (shouldScheduleConsumer()) {
         consumeExecutor.execute(consumer);
       }
-      XTrace.getDefaultLogger().log("waiting for sync done");
+      XTraceUtil.getDebugLogger().log("waiting for sync done");
       blockOnSync(future);
-      XTrace.getDefaultLogger().log("sync done");
+      XTraceUtil.getDebugLogger().log("sync done");
     }
   }
 

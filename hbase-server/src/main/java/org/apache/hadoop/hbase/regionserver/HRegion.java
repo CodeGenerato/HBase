@@ -155,6 +155,7 @@ import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.snapshot.SnapshotDescriptionUtils;
 import org.apache.hadoop.hbase.snapshot.SnapshotManifest;
 import org.apache.hadoop.hbase.trace.TraceUtil;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.CancelableProgressable;
 import org.apache.hadoop.hbase.util.ClassSize;
@@ -4425,7 +4426,7 @@ public class HRegion implements HeapSize, PropagatingConfigurationObserver, Regi
    */
   private void applyToMemStore(HStore store, List<Cell> cells, boolean delta,
       MemStoreSizing memstoreAccounting) throws IOException {
-    XTrace.getDefaultLogger().log("apply to memstore");
+    XTraceUtil.getDebugLogger().log("apply to memstore");
     // Any change in how we update Store/MemStore needs to also be done in other applyToMemStore!!!!
     boolean upsert = delta && store.getColumnFamilyDescriptor().getMaxVersions() == 1;
     if (upsert) {
@@ -7873,7 +7874,7 @@ public class HRegion implements HeapSize, PropagatingConfigurationObserver, Regi
     Preconditions.checkArgument(!walEdit.isReplay() || origLogSeqNum != SequenceId.NO_SEQUENCE_ID,
         "Invalid replay sequence Id for replay WALEdit!");
 
-    XTrace.getDefaultLogger().log("REGION WAL append");
+    XTraceUtil.getDebugLogger().log("REGION WAL append");
     // Using default cluster id, as this can only happen in the originating cluster.
     // A slave cluster receives the final value (not the delta) as a Put. We use HLogKey
     // here instead of WALKeyImpl directly to support legacy coprocessors.
@@ -7889,11 +7890,11 @@ public class HRegion implements HeapSize, PropagatingConfigurationObserver, Regi
     }
     WriteEntry writeEntry = null;
     try {
-      XTrace.getDefaultLogger().log("append");
+      XTraceUtil.getDebugLogger().log("append");
       long txid = this.wal.append(this.getRegionInfo(), walKey, walEdit, true);
       // Call sync on our edit.
       if (txid != 0) {
-        XTrace.getDefaultLogger().log("sync");
+        XTraceUtil.getDebugLogger().log("sync");
         sync(txid, durability);
       }
       writeEntry = walKey.getWriteEntry();

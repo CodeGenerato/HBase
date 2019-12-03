@@ -28,6 +28,7 @@ import org.apache.hadoop.hbase.HBaseInterfaceAudience;
 import org.apache.hadoop.hbase.PrivateCellUtil;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.KeyValueUtil;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.apache.hadoop.hbase.codec.BaseDecoder;
 import org.apache.hadoop.hbase.codec.BaseEncoder;
@@ -359,7 +360,7 @@ public class WALCellCodec implements Codec {
     }
     @Override
     public void write(Cell cell) throws IOException {
-      XTrace.getDefaultLogger().log("write to outputstream: "+ out);
+      XTraceUtil.getDebugLogger().log("write to outputstream: "+ out);
       checkFlushed();
       // Make sure to write tags into WAL
       ByteBufferUtils.putInt(this.out, KeyValueUtil.getSerializedSize(cell, true));

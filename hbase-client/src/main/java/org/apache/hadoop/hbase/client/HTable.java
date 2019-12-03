@@ -35,6 +35,7 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.io.TimeRange;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.apache.yetus.audience.InterfaceStability;
 import org.slf4j.Logger;
@@ -321,18 +322,18 @@ public class HTable implements Table {
     }
 
     if (scan.isReversed()) {
-      XTrace.getDefaultLogger().log("reversed client scanner");
+      XTraceUtil.getDebugLogger().log("reversed client scanner");
       return new ReversedClientScanner(getConfiguration(), scan, getName(),
         this.connection, this.rpcCallerFactory, this.rpcControllerFactory,
         pool, connConfiguration.getReplicaCallTimeoutMicroSecondScan());
     } else {
       if (async) {
-        XTrace.getDefaultLogger().log("async client prefetch scanner");
+        XTraceUtil.getDebugLogger().log("async client prefetch scanner");
         return new ClientAsyncPrefetchScanner(getConfiguration(), scan, getName(), this.connection,
             this.rpcCallerFactory, this.rpcControllerFactory,
             pool, connConfiguration.getReplicaCallTimeoutMicroSecondScan());
       } else {
-        XTrace.getDefaultLogger().log("simple client scanner");
+        XTraceUtil.getDebugLogger().log("simple client scanner");
         return new ClientSimpleScanner(getConfiguration(), scan, getName(), this.connection,
             this.rpcCallerFactory, this.rpcControllerFactory,
             pool, connConfiguration.getReplicaCallTimeoutMicroSecondScan());
@@ -370,7 +371,7 @@ public class HTable implements Table {
 
   private Result get(Get get, final boolean checkExistenceOnly) throws IOException {
     //XTrace.startTask(true);
-    //XTrace.getDefaultLogger().tag("GET","GET");
+    //XTraceUtil.getDebugLogger().tag("GET","GET");
     // if we are changing settings to the get, clone it.
     if (get.isCheckExistenceOnly() != checkExistenceOnly || get.getConsistency() == null) {
       get = ReflectionUtils.newInstance(get.getClass(), get);
@@ -500,7 +501,7 @@ public class HTable implements Table {
   @Override
   public void delete(final Delete delete) throws IOException {
     //XTrace.startTask(true);
-    //XTrace.getDefaultLogger().tag("DELETE", "DELETE");
+    //XTraceUtil.getDebugLogger().tag("DELETE", "DELETE");
     ClientServiceCallable<Void> callable =
         new ClientServiceCallable<Void>(this.connection, getName(), delete.getRow(),
             this.rpcControllerFactory.newController(), delete.getPriority()) {
@@ -520,7 +521,7 @@ public class HTable implements Table {
   public void delete(final List<Delete> deletes)
   throws IOException {
     //XTrace.startTask(true);
-    //XTrace.getDefaultLogger().tag("DELETE", "DELETE");
+    //XTraceUtil.getDebugLogger().tag("DELETE", "DELETE");
     Object[] results = new Object[deletes.size()];
     try {
       batch(deletes, results, writeRpcTimeoutMs);
@@ -543,8 +544,8 @@ public class HTable implements Table {
   @Override
   public void put(final Put put) throws IOException {
     //XTrace.startTask(true);
-    //XTrace.getDefaultLogger().tag("PUT", "PUT");
-    //XTrace.getDefaultLogger().log("start put");
+    //XTraceUtil.getDebugLogger().tag("PUT", "PUT");
+    //XTraceUtil.getDebugLogger().log("start put");
 
     validatePut(put);
     ClientServiceCallable<Void> callable =
@@ -565,8 +566,8 @@ public class HTable implements Table {
   @Override
   public void put(final List<Put> puts) throws IOException {
     //XTrace.startTask(true);
-    //XTrace.getDefaultLogger().tag("PUT MULTI", "PUT MULTI");
-    //XTrace.getDefaultLogger().log("start put");
+    //XTraceUtil.getDebugLogger().tag("PUT MULTI", "PUT MULTI");
+    //XTraceUtil.getDebugLogger().log("start put");
 
     for (Put put : puts) {
       validatePut(put);
@@ -582,7 +583,7 @@ public class HTable implements Table {
   @Override
   public void mutateRow(final RowMutations rm) throws IOException {
     //XTrace.startTask(true);
-    //XTrace.getDefaultLogger().tag("MUTATE ROW","MUTATE ROW");
+    //XTraceUtil.getDebugLogger().tag("MUTATE ROW","MUTATE ROW");
     CancellableRegionServerCallable<MultiResponse> callable =
       new CancellableRegionServerCallable<MultiResponse>(this.connection, getName(), rm.getRow(),
           rpcControllerFactory.newController(), writeRpcTimeoutMs,

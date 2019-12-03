@@ -632,7 +632,7 @@ abstract class ServerRpcConnection implements Closeable {
     // that executes the call.
 
     // if(header.getTraceBaggage()!=null) Baggage.start(header.getTraceBaggage().toByteArray());
-    // XTrace.getDefaultLogger().log("response header read: "+header.toString());
+    // XTraceUtil.getDebugLogger().log("response header read: "+header.toString());
 
     // Enforcing the call queue size, this triggers a retry in the client
     // This is a bit late to be doing this check - we have already read in the

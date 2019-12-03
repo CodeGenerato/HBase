@@ -221,7 +221,7 @@ class SimpleServerRpcConnection extends ServerRpcConnection {
             Baggage.start(header.getTraceBaggage().toByteArray());
           }
 
-          XTrace.getDefaultLogger().log("response header read: " + header.toString());
+          XTraceUtil.getDebugLogger().log("response header read: " + header.toString());
 
           // Notify the client about the offending request
           SimpleServerCall reqTooBig = new SimpleServerCall(header.getCallId(), this.service, null,

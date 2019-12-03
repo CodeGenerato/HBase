@@ -18,8 +18,8 @@ public class XTraceUtil {
 
     private static void onBaggageIsNull(){
         XTrace.startTask(true);
-        XTrace.getDefaultLogger().tag("NULL BAGGAGE","NULL BAGGAGE");
-        XTrace.getDefaultLogger().log("NULL BAGGAGE HERE");
+        XTraceUtil.getDebugLogger().tag("NULL BAGGAGE","NULL BAGGAGE");
+        XTraceUtil.getDebugLogger().log("NULL BAGGAGE HERE");
 
     }
 
@@ -40,7 +40,7 @@ public class XTraceUtil {
     private static XTraceLogger c_logger;
     public synchronized  static XTraceLogger getContentLogger(){
         if(c_logger == null) {
-            c_logger = XTrace.getDefaultLogger();
+            c_logger = XTraceUtil.getDebugLogger();
         }
         return c_logger;
     }

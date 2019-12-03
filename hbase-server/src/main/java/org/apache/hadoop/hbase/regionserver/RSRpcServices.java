@@ -125,6 +125,7 @@ import org.apache.hadoop.hbase.security.Superusers;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.access.AccessChecker;
 import org.apache.hadoop.hbase.security.access.Permission;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.DNS;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
@@ -2754,7 +2755,7 @@ public class RSRpcServices implements HBaseRPCErrorHandler,
   @Override
   public MutateResponse mutate(final RpcController rpcc,
       final MutateRequest request) throws ServiceException {
-    XTrace.getDefaultLogger().log("MUTATE server action");
+    XTraceUtil.getDebugLogger().log("MUTATE server action");
     // rpc controller is how we bring in data via the back door;  it is unprotobuf'ed data.
     // It is also the conduit via which we pass back data.
     HBaseRpcController controller = (HBaseRpcController)rpcc;
@@ -2797,7 +2798,7 @@ public class RSRpcServices implements HBaseRPCErrorHandler,
           r = increment(region, quota, mutation, cellScanner, nonceGroup, spaceQuotaEnforcement);
           break;
         case PUT:
-          XTrace.getDefaultLogger().log("PUT server action");
+          XTraceUtil.getDebugLogger().log("PUT server action");
           Put put = ProtobufUtil.toPut(mutation, cellScanner);
           checkCellSizeLimit(region, put);
           // Throws an exception when violated
@@ -2833,7 +2834,7 @@ public class RSRpcServices implements HBaseRPCErrorHandler,
           }
           break;
         case DELETE:
-          XTrace.getDefaultLogger().log("DELETE server action");
+          XTraceUtil.getDebugLogger().log("DELETE server action");
           Delete delete = ProtobufUtil.toDelete(mutation, cellScanner);
           checkCellSizeLimit(region, delete);
           spaceQuotaEnforcement.getPolicyEnforcement(region).check(delete);

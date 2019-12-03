@@ -32,6 +32,7 @@ import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.io.ByteBufferWriter;
 import org.apache.hadoop.hbase.io.asyncfs.AsyncFSOutput;
 import org.apache.hadoop.hbase.io.asyncfs.AsyncFSOutputHelper;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hadoop.hbase.util.CommonFSUtils.StreamLacksCapabilityException;
 import org.apache.hadoop.hbase.wal.AsyncFSWALProvider;
 import org.apache.hadoop.hbase.wal.WAL.Entry;
@@ -123,7 +124,7 @@ public class AsyncProtobufLogWriter extends AbstractProtobufLogWriter
 
   @Override
   public void append(Entry entry) {
-    XTrace.getDefaultLogger().log("append to outputstream");
+    XTraceUtil.getDebugLogger().log("append to outputstream");
     int buffered = output.buffered();
     try {
       entry.getKey().
@@ -144,7 +145,7 @@ public class AsyncProtobufLogWriter extends AbstractProtobufLogWriter
 
   @Override
   public CompletableFuture<Long> sync() {
-    XTrace.getDefaultLogger().log("flush outputstream: "+output);
+    XTraceUtil.getDebugLogger().log("flush outputstream: "+output);
     return output.flush(false);
   }
 

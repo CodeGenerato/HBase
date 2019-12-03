@@ -98,6 +98,7 @@ import org.apache.hadoop.hbase.security.access.Permission;
 import org.apache.hadoop.hbase.security.visibility.VisibilityController;
 import org.apache.hadoop.hbase.snapshot.ClientSnapshotDescriptionUtils;
 import org.apache.hadoop.hbase.snapshot.SnapshotDescriptionUtils;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.hadoop.hbase.util.ForeignExceptionUtil;
@@ -482,7 +483,7 @@ public class MasterRpcServices extends RSRpcServices
   public RegionServerReportResponse regionServerReport(RpcController controller,
       RegionServerReportRequest request) throws ServiceException {
     try {
-      XTrace.getDefaultLogger().log("get report for region server from master");
+      XTraceUtil.getDebugLogger().log("get report for region server from master");
       master.checkServiceStarted();
       int versionNumber = 0;
       String version = "0.0.0";

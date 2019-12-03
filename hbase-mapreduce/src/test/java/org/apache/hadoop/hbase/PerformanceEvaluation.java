@@ -82,6 +82,7 @@ import org.apache.hadoop.hbase.regionserver.CompactingMemStore;
 import org.apache.hadoop.hbase.trace.HBaseHTraceConfiguration;
 import org.apache.hadoop.hbase.trace.SpanReceiverHost;
 import org.apache.hadoop.hbase.trace.TraceUtil;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hadoop.hbase.util.ByteArrayHashKey;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Hash;
@@ -1170,8 +1171,8 @@ public class PerformanceEvaluation extends Configured implements Tool {
         this.zipf = new RandomDistribution.Zipf(this.rand, 1, options.getValueSize(), 1.2);
       }
       XTrace.startTask(true);
-      XTrace.getDefaultLogger().tag("CREATE TEST","CREATE TEST");
-      XTrace.getDefaultLogger().log(opts.toString());
+      XTraceUtil.getDebugLogger().tag("CREATE TEST","CREATE TEST");
+      XTraceUtil.getDebugLogger().log(opts.toString());
       Baggage.discard();
 
       LOG.info("Sampling 1 every " + everyN + " out of " + opts.perClientRunRows + " total rows.");
@@ -1352,7 +1353,7 @@ public class PerformanceEvaluation extends Configured implements Tool {
      */
     void testTimed() throws IOException, InterruptedException {
       XTrace.startTask(true);
-      XTrace.getDefaultLogger().tag("TEST","TEST");
+      XTraceUtil.getDebugLogger().tag("TEST","TEST");
       int startRow = getStartRow();
       int lastRow = getLastRow();
       TraceUtil.addSampler(traceSampler);
@@ -1364,7 +1365,7 @@ public class PerformanceEvaluation extends Configured implements Tool {
           long startTime = System.nanoTime();
           boolean requestSent = false;
           try (TraceScope scope = TraceUtil.createTrace("test row");){
-            //XTrace.getDefaultLogger().log("testRow");
+            //XTraceUtil.getDebugLogger().log("testRow");
             requestSent = testRow(i);
           }
           if ( (i - startRow) > opts.measureAfter) {
@@ -1805,7 +1806,7 @@ public class PerformanceEvaluation extends Configured implements Tool {
         scan.setFilter(new FilterAllFilter());
       }
       XTrace.startTask(true);
-      XTrace.getDefaultLogger().tag("RANDOM SCAN","RANDOM SCAN");
+      XTraceUtil.getDebugLogger().tag("RANDOM SCAN","RANDOM SCAN");
 
       Result r = null;
       int count = 0;
@@ -2002,7 +2003,7 @@ public class PerformanceEvaluation extends Configured implements Tool {
         if (opts.filterAll) {
           scan.setFilter(new FilterAllFilter());
         }
-        XTrace.getDefaultLogger().log("getScanner");
+        XTraceUtil.getDebugLogger().log("getScanner");
         this.testScanner = table.getScanner(scan);
       }
 
@@ -2227,7 +2228,7 @@ public class PerformanceEvaluation extends Configured implements Tool {
           table.put(put);
         }
       } else {
-        //Xtrace.getDefaultLogger().log("PUT mutator");
+        //XTraceUtil.getDebugLogger().log("PUT mutator");
         mutator.mutate(put);
       }
       return true;

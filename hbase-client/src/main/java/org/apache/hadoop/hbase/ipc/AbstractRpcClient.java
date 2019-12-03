@@ -22,6 +22,7 @@ import static org.apache.hadoop.hbase.ipc.IPCUtil.toIOE;
 import static org.apache.hadoop.hbase.ipc.IPCUtil.wrapException;
 
 import org.apache.hadoop.hbase.exceptions.IllegalArgumentIOException;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hbase.thirdparty.com.google.common.annotations.VisibleForTesting;
 import org.apache.hbase.thirdparty.com.google.common.base.Preconditions;
 import org.apache.hbase.thirdparty.com.google.common.cache.CacheBuilder;
@@ -338,7 +339,7 @@ public abstract class AbstractRpcClient<T extends RpcConnection> implements RpcC
     Message val;
     try {
       val = done.get();
-      XTrace.getDefaultLogger().log(md+" result received");
+      XTraceUtil.getDebugLogger().log(md+" result received");
     } catch (IOException e) {
       throw new ServiceException(e);
     }
@@ -429,7 +430,7 @@ public abstract class AbstractRpcClient<T extends RpcConnection> implements RpcC
       cs.setConcurrentCallsPerServer(count);
 
 
-      XTrace.getDefaultLogger().log("send RPC", md.getName());
+      XTraceUtil.getDebugLogger().log("send RPC", md.getName());
 
       T connection = getConnection(remoteId);
       connection.sendRequest(call, hrc);

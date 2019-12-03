@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.io.ByteArrayOutputStream;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hadoop.hbase.util.CancelableProgressable;
 import org.apache.hadoop.hdfs.protocol.DatanodeInfo;
 import org.apache.yetus.audience.InterfaceAudience;
@@ -88,7 +89,7 @@ public class WrapperAsyncFSOutput implements AsyncFSOutput {
 
   private void flush0(CompletableFuture<Long> future, ByteArrayOutputStream buffer, boolean sync) {
     try {
-      XTrace.getDefaultLogger().log("flush to out: "+out);
+      XTraceUtil.getDebugLogger().log("flush to out: "+out);
       if (buffer.size() > 0) {
         out.write(buffer.getBuffer(), 0, buffer.size());
         if (sync) {

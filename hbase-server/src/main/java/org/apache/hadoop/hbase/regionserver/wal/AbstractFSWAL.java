@@ -61,6 +61,7 @@ import org.apache.hadoop.hbase.ipc.ServerCall;
 import org.apache.hadoop.hbase.log.HBaseMarkers;
 import org.apache.hadoop.hbase.regionserver.MultiVersionConcurrencyControl;
 import org.apache.hadoop.hbase.trace.TraceUtil;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.CommonFSUtils;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
@@ -992,7 +993,7 @@ public abstract class AbstractFSWAL<W extends WriterBase> implements WAL {
       entry.stampRegionSequenceId(we);
       ringBuffer.get(txid).load(entry);
     } finally {
-      XTrace.getDefaultLogger().log("append to ring buffer");
+      XTraceUtil.getDebugLogger().log("append to ring buffer");
       ringBuffer.publish(txid);
     }
     return txid;

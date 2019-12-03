@@ -23,6 +23,7 @@ import static org.apache.hadoop.hbase.ipc.IPCUtil.setCancelled;
 import static org.apache.hadoop.hbase.ipc.IPCUtil.toIOE;
 
 import org.apache.hadoop.hbase.exceptions.IllegalArgumentIOException;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hbase.thirdparty.io.netty.handler.timeout.ReadTimeoutHandler;
 import org.apache.hadoop.hbase.security.NettyHBaseRpcConnectionHeaderHandler;
 import org.apache.hbase.thirdparty.com.google.protobuf.RpcCallback;
@@ -333,7 +334,7 @@ class NettyRpcConnection extends RpcConnection {
           }
           scheduleTimeoutTask(call);
           final Channel ch = channel;
-          XTrace.getDefaultLogger().log("send RPC");
+          XTraceUtil.getDebugLogger().log("send RPC");
           call.bag=Baggage.fork();
 
           // We must move the whole writeAndFlush call inside event loop otherwise there will be a

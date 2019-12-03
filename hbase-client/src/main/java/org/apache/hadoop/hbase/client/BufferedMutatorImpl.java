@@ -37,6 +37,7 @@ import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.ipc.RpcControllerFactory;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.apache.yetus.audience.InterfaceStability;
 import org.slf4j.Logger;
@@ -178,7 +179,7 @@ public class BufferedMutatorImpl implements BufferedMutator {
   @Override
   public void mutate(Mutation m) throws InterruptedIOException,
       RetriesExhaustedWithDetailsException {
-    XTrace.getDefaultLogger().log("mutate");
+    XTraceUtil.getDebugLogger().log("mutate");
     mutate(Collections.singletonList(m));
   }
 
@@ -291,7 +292,7 @@ public class BufferedMutatorImpl implements BufferedMutator {
    */
   private void doFlush(boolean flushAll) throws InterruptedIOException,
       RetriesExhaustedWithDetailsException {
-    XTrace.getDefaultLogger().log("flush");
+    XTraceUtil.getDebugLogger().log("flush");
     List<RetriesExhaustedWithDetailsException> errors = new ArrayList<>();
     while (true) {
       if (!flushAll && currentWriteBufferSize.get() <= writeBufferSize) {
@@ -305,8 +306,8 @@ public class BufferedMutatorImpl implements BufferedMutator {
           break;
         }
         XTrace.startTask(true);
-        XTrace.getDefaultLogger().tag("Buffered Mutations","Buffered Mutations");
-        XTrace.getDefaultLogger().log("submit mutations");
+        XTraceUtil.getDebugLogger().tag("Buffered Mutations","Buffered Mutations");
+        XTraceUtil.getDebugLogger().log("submit mutations");
         asf = ap.submit(createTask(access));
       }
       // DON'T do the wait in the try-with-resources. Otherwise, the undealt mutations won't

@@ -22,6 +22,7 @@ import static org.apache.hadoop.hbase.client.ConnectionUtils.createScanResultCac
 import static org.apache.hadoop.hbase.client.ConnectionUtils.incRegionCountMetrics;
 
 import edu.brown.cs.systems.xtrace.XTrace;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hbase.thirdparty.com.google.common.annotations.VisibleForTesting;
 
 import java.io.IOException;
@@ -140,7 +141,7 @@ public abstract class ClientScanner extends AbstractClientScanner {
     this.conf = conf;
     // TODO XTRACE Monitor scanner settings
     //ReflectionToStringBuilder.toString(this);
-    XTrace.getDefaultLogger().log("SCANNER SETTINGS:");
+    XTraceUtil.getDebugLogger().log("SCANNER SETTINGS:");
     this.scanResultCache = createScanResultCache(scan);
     initCache();
   }
@@ -310,7 +311,7 @@ public abstract class ClientScanner extends AbstractClientScanner {
       return null;
     }
 
-    XTrace.getDefaultLogger().log("next, load cache");
+    XTraceUtil.getDebugLogger().log("next, load cache");
     loadCache();
 
     // try again to load from cache
@@ -436,14 +437,14 @@ public abstract class ClientScanner extends AbstractClientScanner {
         // exhausted current region.
         // now we will also fetch data when openScanner, so do not make a next call again if values
         // is already non-null.
-        XTrace.getDefaultLogger().log("call for load");
+        XTraceUtil.getDebugLogger().log("call for load");
         values = call(callable, caller, scannerTimeout, true);
         // When the replica switch happens, we need to do certain operations again.
         // The callable will openScanner with the right startkey but we need to pick up
         // from there. Bypass the rest of the loop and let the catch-up happen in the beginning
         // of the loop as it happens for the cases where we see exceptions.
         if (callable.switchedToADifferentReplica()) {
-          XTrace.getDefaultLogger().log("switched region");
+          XTraceUtil.getDebugLogger().log("switched region");
           // Any accumulated partial results are no longer valid since the callable will
           // openScanner with the correct startkey and we must pick up from there
           scanResultCache.clear();
@@ -471,7 +472,7 @@ public abstract class ClientScanner extends AbstractClientScanner {
           scanResultCache.addAndGet(values, callable.isHeartbeatMessage());
       int numberOfCompleteRows =
           scanResultCache.numberOfCompleteRows() - numberOfCompleteRowsBefore;
-      XTrace.getDefaultLogger().log(resultsToAddToCache.length+" "+numberOfCompleteRows+" "+scanResultCache.numberOfCompleteRows()+" rows loaded in cache");
+      XTraceUtil.getDebugLogger().log(resultsToAddToCache.length+" "+numberOfCompleteRows+" "+scanResultCache.numberOfCompleteRows()+" rows loaded in cache");
       for (Result rs : resultsToAddToCache) {
         cache.add(rs);
         long estimatedHeapSizeOfResult = calcEstimatedSize(rs);

@@ -45,6 +45,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.crypto.Encryptor;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.io.asyncfs.FanOutOneBlockAsyncDFSOutputHelper.CancelOnClose;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hadoop.hbase.util.CancelableProgressable;
 import org.apache.hadoop.hbase.util.FSUtils;
 import org.apache.hadoop.hdfs.DFSClient;
@@ -419,7 +420,7 @@ public class FanOutOneBlockAsyncDFSOutput implements AsyncFSOutput {
     // XTRACE currently this output class is not used, since is to hard to instrument (no RPC headers etc)
     //this is the point where datanodes are accessed to perform a lightweight low latency write
     //Baggage could be added to some buffer
-    XTrace.getDefaultLogger().log("write packets "+headerBuf.retainedDuplicate()+" "+dataBuf.retainedDuplicate());
+    XTraceUtil.getDebugLogger().log("write packets "+headerBuf.retainedDuplicate()+" "+dataBuf.retainedDuplicate());
     datanodeList.forEach(ch -> {
       ch.write(headerBuf.retainedDuplicate());
       ch.write(checksumBuf.retainedDuplicate());

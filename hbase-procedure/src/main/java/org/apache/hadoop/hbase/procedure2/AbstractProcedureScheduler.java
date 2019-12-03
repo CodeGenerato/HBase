@@ -23,6 +23,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,7 +127,7 @@ public abstract class AbstractProcedureScheduler implements ProcedureScheduler {
   }
 
   protected void push(final Procedure procedure, final boolean addFront, final boolean notify) {
-    XTrace.getDefaultLogger().log("Enqueue procedure");
+    XTraceUtil.getDebugLogger().log("Enqueue procedure");
     //TODO XTRACE why not in procedure executer? we anyway never get it anywhere else
     if(procedure!=null) procedure.bag = Baggage.fork();
     schedLock();

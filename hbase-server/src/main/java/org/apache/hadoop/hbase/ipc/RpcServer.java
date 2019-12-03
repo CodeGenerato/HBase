@@ -56,6 +56,7 @@ import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.hbase.security.token.AuthenticationTokenSecretManager;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hadoop.hbase.util.Pair;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.authorize.AuthorizationException;
@@ -422,9 +423,9 @@ public abstract class RpcServer implements RpcServerInterface,
       HBaseRpcControllerImpl controller = new HBaseRpcControllerImpl(call.getCellScanner());
       controller.setCallTimeout(call.getTimeout());
 
-      XTrace.getDefaultLogger().log("calling blocking method: " + md.getFullName());
+      XTraceUtil.getDebugLogger().log("calling blocking method: " + md.getFullName());
       Message result = call.getService().callBlockingMethod(md, controller, param);
-      XTrace.getDefaultLogger().log("blocking method returned: " + md.getFullName());
+      XTraceUtil.getDebugLogger().log("blocking method returned: " + md.getFullName());
 
       long receiveTime = call.getReceiveTime();
       long startTime = call.getStartTime();
