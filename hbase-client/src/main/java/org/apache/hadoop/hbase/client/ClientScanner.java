@@ -138,7 +138,9 @@ public abstract class ClientScanner extends AbstractClientScanner {
     this.rpcControllerFactory = controllerFactory;
 
     this.conf = conf;
-
+    // TODO XTRACE Monitor scanner settings
+    //ReflectionToStringBuilder.toString(this);
+    XTrace.getDefaultLogger().log("SCANNER SETTINGS:");
     this.scanResultCache = createScanResultCache(scan);
     initCache();
   }
