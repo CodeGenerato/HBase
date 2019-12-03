@@ -70,7 +70,7 @@ public class BlockingRpcCallback<R> implements RpcCallback<R> {
         throw exception;
       }
     }
-    Baggage.start(bag);
+    Baggage.join(bag);
     return result;
   }
 }

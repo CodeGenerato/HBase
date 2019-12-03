@@ -157,7 +157,7 @@ class SyncFuture {
     }
     // TODO XTRACE if we start the bag here, sometimes traces get cut, so the tracked bag
     // is sometimes not correct (belongs to the wrong trace
-    Baggage.start(bag);
+    Baggage.join(bag);
     if (this.throwable != null) {
       throw new ExecutionException(this.throwable);
     }

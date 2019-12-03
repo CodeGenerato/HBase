@@ -49,6 +49,7 @@ import org.apache.hadoop.hbase.security.HBaseSaslRpcClient;
 import org.apache.hadoop.hbase.security.SaslUtil;
 import org.apache.hadoop.hbase.security.SaslUtil.QualityOfProtection;
 import org.apache.hadoop.hbase.trace.TraceUtil;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.hadoop.hbase.util.ExceptionUtil;
 import org.apache.hadoop.io.IOUtils;
@@ -189,7 +190,9 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
           }
           Call call = callsToWrite.poll();
          try {
-           Baggage.start(call.bag);
+           if(XTraceUtil.checkBaggageForNull(call.bag)) {
+             Baggage.start(call.bag);
+           }
            // TODO XTRACE discarding not needed but nice
            if (call.isDone()) {
              continue;
@@ -667,7 +670,9 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
       // Read the header
       ResponseHeader responseHeader = ResponseHeader.parseDelimitedFrom(in);
 
-      if(responseHeader.getTraceBaggage()!=null) Baggage.start(responseHeader.getTraceBaggage().toByteArray());
+      if (XTraceUtil.checkBaggageForNull(responseHeader.getTraceBaggage())) {
+        Baggage.join(responseHeader.getTraceBaggage().toByteArray());
+      }
       XTrace.getDefaultLogger().log("RPC response: "+responseHeader.toString());
       int id = responseHeader.getCallId();
       call = calls.remove(id); // call.done have to be set before leaving this method

@@ -18,6 +18,7 @@
 package org.apache.hadoop.hbase.ipc;
 
 import org.apache.hadoop.hbase.exceptions.ConnectionClosedException;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hbase.thirdparty.com.google.protobuf.Message;
 import org.apache.hbase.thirdparty.com.google.protobuf.Message.Builder;
 import org.apache.hbase.thirdparty.com.google.protobuf.TextFormat;
@@ -84,7 +85,8 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
   private void writeRequest(ChannelHandlerContext ctx, Call call, ChannelPromise promise)
       throws IOException {
     try {
-      if(call.bag!=null) Baggage.start(call.bag);
+      XTraceUtil.checkBaggageForNull(call.bag);
+      Baggage.join(call.bag);
 
       id2Call.put(call.id, call);
       ByteBuf cellBlock = cellBlockBuilder.buildCellBlock(codec, compressor, call.cells, ctx.alloc());
@@ -144,9 +146,11 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
 
     try {
       // TODO XTRACE better solution for to byte and from byte?
-      if (responseHeader.getTraceBaggage() != null) {
-        Baggage.start(responseHeader.getTraceBaggage().toByteArray());
+
+      if (XTraceUtil.checkBaggageForNull(responseHeader.getTraceBaggage())) {
+        Baggage.join(responseHeader.getTraceBaggage().toByteArray());
       }
+
       int id = responseHeader.getCallId();
       if (LOG.isTraceEnabled()) {
         LOG.trace("got response header " + TextFormat.shortDebugString(responseHeader)

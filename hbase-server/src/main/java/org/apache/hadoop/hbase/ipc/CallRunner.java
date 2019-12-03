@@ -26,6 +26,8 @@ import org.apache.hadoop.hbase.CellScanner;
 import org.apache.hadoop.hbase.HBaseInterfaceAudience;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos;
 import org.apache.hadoop.hbase.trace.TraceUtil;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
+import org.apache.hbase.thirdparty.com.google.protobuf.ByteString;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.apache.yetus.audience.InterfaceStability;
 import org.apache.hadoop.hbase.exceptions.TimeoutIOException;
@@ -102,7 +104,11 @@ public class CallRunner {
     try {
 
       RPCProtos.RequestHeader rq = call.getHeader();
-      if (rq.getTraceBaggage() != null) Baggage.start(rq.getTraceBaggage().toByteArray());
+
+      ByteString bs = rq.getTraceBaggage();
+      if(XTraceUtil.checkBaggageForNull(bs)) {
+        Baggage.start(bs.toByteArray());
+      }
 
       if (call.disconnectSince() >= 0) {
         if (RpcServer.LOG.isDebugEnabled()) {

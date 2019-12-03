@@ -30,6 +30,7 @@ import edu.brown.cs.systems.baggage.DetachedBaggage;
 import edu.brown.cs.systems.baggage.Baggage;
 import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.hadoop.hbase.trace.TraceUtil;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +83,9 @@ public class ResultBoundedCompletionService<V> {
     @Override
     public void run() {
       try {
-        Baggage.start(bag);
+        if(XTraceUtil.checkBaggageForNull(bag)){
+          Baggage.start(bag);
+        }
         // XTRACE we need this ugly redundant code because this is not properly locked
         if (!cancelled) {
 
@@ -115,7 +118,7 @@ public class ResultBoundedCompletionService<V> {
       retryingCaller.cancel();
       if (future instanceof Cancellable) ((Cancellable)future).cancel();
       cancelled = true;
-      Baggage.start(bag);
+      Baggage.join(bag);
       // XTRACE start/join makes sense, if a thread other than the "submit" thread is calling cancel here
       // otherwise we just join the baggage we alread have in the thread
       return true;
@@ -147,22 +150,22 @@ public class ResultBoundedCompletionService<V> {
       synchronized (tasks) {
         // XTRACE we need this ugly redundant code because this is not properly locked
         if (resultObtained) {
-          Baggage.start(bag);
+          Baggage.join(bag);
           return result;
         }
         if (exeEx != null) {
-          Baggage.start(bag);
+          Baggage.join(bag);
           throw exeEx;
         }
         unit.timedWait(tasks, timeout);
       }
       if (resultObtained) {
-        Baggage.start(bag);
+        Baggage.join(bag);
 
         return result;
       }
       if (exeEx != null) {
-        Baggage.start(bag);
+        Baggage.join(bag);
         throw exeEx;
       }
 

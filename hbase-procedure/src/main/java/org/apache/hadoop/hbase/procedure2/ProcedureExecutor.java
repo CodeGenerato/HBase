@@ -47,6 +47,7 @@ import org.apache.hadoop.hbase.procedure2.store.ProcedureStore.ProcedureIterator
 import org.apache.hadoop.hbase.procedure2.store.ProcedureStore.ProcedureStoreListener;
 import org.apache.hadoop.hbase.procedure2.util.StringUtils;
 import org.apache.hadoop.hbase.security.User;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.hadoop.hbase.util.IdLock;
 import org.apache.hadoop.hbase.util.NonceKey;
@@ -2035,8 +2036,10 @@ public class ProcedureExecutor<TEnvironment> {
           if (proc == null) {
             continue;
           }
+          if(XTraceUtil.checkBaggageForNull(proc.bag)) {
+            Baggage.start(proc.bag);
+          }
 
-          Baggage.start(proc.bag);
           XTrace.getDefaultLogger().log(proc.toString());
 
           this.activeProcedure = proc;

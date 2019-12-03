@@ -31,6 +31,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.hadoop.hbase.CellScanner;
 import org.apache.hadoop.hbase.DoNotRetryIOException;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.apache.hadoop.hbase.client.VersionInfoUtil;
 import org.apache.hadoop.hbase.exceptions.RequestTooBigException;
@@ -215,9 +216,11 @@ class SimpleServerRpcConnection extends ServerRpcConnection {
           Message.Builder builder = RequestHeader.newBuilder();
           ProtobufUtil.mergeFrom(builder, cis, headerSize);
           RequestHeader header = (RequestHeader) builder.build();
-          if (header.getTraceBaggage() != null) {
+
+          if(XTraceUtil.checkBaggageForNull(header.getTraceBaggage())) {
             Baggage.start(header.getTraceBaggage().toByteArray());
           }
+
           XTrace.getDefaultLogger().log("response header read: " + header.toString());
 
           // Notify the client about the offending request

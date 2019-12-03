@@ -53,6 +53,7 @@ import org.apache.hadoop.hbase.HBaseInterfaceAudience;
 import org.apache.hadoop.hbase.client.RegionInfo;
 import org.apache.hadoop.hbase.io.asyncfs.AsyncFSOutput;
 import org.apache.hadoop.hbase.trace.TraceUtil;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hadoop.hbase.wal.AsyncFSWALProvider;
 import org.apache.hadoop.hbase.wal.WALEdit;
 import org.apache.hadoop.hbase.wal.WALKeyImpl;
@@ -372,7 +373,10 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
     DetachedBaggage bag = Baggage.stop();
     for (Iterator<SyncFuture> iter = syncFutures.iterator(); iter.hasNext();) {
       SyncFuture sync = iter.next();
-      Baggage.start(sync.bag);
+
+      if(XTraceUtil.checkBaggageForNull(sync.bag)) {
+        Baggage.start(sync.bag);
+      }
       if (sync.getTxid() <= txid) {
         sync.done(txid, null);
         iter.remove();
@@ -397,7 +401,10 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
         long maxSyncTxid = highestSyncedTxid.get();
         DetachedBaggage bag =Baggage.stop();
         for (SyncFuture sync : syncFutures) {
-          Baggage.start(sync.bag);
+
+          if(XTraceUtil.checkBaggageForNull(sync.bag)) {
+            Baggage.start(sync.bag);
+          }
           maxSyncTxid = Math.max(maxSyncTxid, sync.getTxid());
           sync.done(maxSyncTxid, null);
           if (addSyncTrace) {
@@ -438,7 +445,10 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
     DetachedBaggage bag= Baggage.stop();
     for (Iterator<FSWALEntry> iter = toWriteAppends.iterator(); iter.hasNext();) {
       FSWALEntry entry = iter.next();
-      Baggage.start(entry.bag);
+
+      if(XTraceUtil.checkBaggageForNull(entry.bag)) {
+        Baggage.start(entry.bag);
+      }
       boolean appended;
       try {
         appended = append(writer, entry);
@@ -501,11 +511,11 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
     // XTRACE this is a hack to keep everything on one trace
     if(bag==null) {
       XTrace.startTask(true);
-      XTrace.getDefaultLogger().tag("consume WAL ops", "consume WAL Ops");
+      XTrace.getDefaultLogger().tag("Batched WAL OP", "Batched WAL OP");
       bag = Baggage.fork();
     }
     else{
-      Baggage.start(bag);
+      Baggage.join(bag);
     }
     XTrace.getDefaultLogger().log("consume start");
 

@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.hadoop.hbase.DoNotRetryIOException;
 import org.apache.hadoop.hbase.client.VersionInfoUtil;
 import org.apache.hadoop.hbase.exceptions.RequestTooBigException;
+import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.yetus.audience.InterfaceAudience;
 
 import org.apache.hbase.thirdparty.io.netty.buffer.ByteBuf;
@@ -37,7 +38,6 @@ import edu.brown.cs.systems.baggage.Baggage;
 import edu.brown.cs.systems.baggage.DetachedBaggage;
 
 import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
 
 /**
  * Decoder for extracting frame
@@ -171,7 +171,11 @@ public class NettyRpcFrameDecoder extends ByteToMessageDecoder {
       RPCProtos.RequestHeader.Builder builder = RPCProtos.RequestHeader.newBuilder();
       ProtobufUtil.mergeFrom(builder, array, offset, length);
       RPCProtos.RequestHeader rq= builder.build();
-      if (rq.getTraceBaggage() != null) Baggage.start(rq.getTraceBaggage().toByteArray());
+
+      if(XTraceUtil.checkBaggageForNull(rq.getTraceBaggage())){
+        Baggage.start(rq.getTraceBaggage().toByteArray());
+      }
+
       XTrace.getDefaultLogger().log("response header read: " + rq.toString());
       return rq;
     } finally {
