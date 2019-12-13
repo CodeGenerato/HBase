@@ -370,8 +370,6 @@ public class HTable implements Table {
   }
 
   private Result get(Get get, final boolean checkExistenceOnly) throws IOException {
-    //XTrace.startTask(true);
-    //XTraceUtil.getDebugLogger().tag("GET","GET");
     // if we are changing settings to the get, clone it.
     if (get.isCheckExistenceOnly() != checkExistenceOnly || get.getConsistency() == null) {
       get = ReflectionUtils.newInstance(get.getClass(), get);
@@ -500,9 +498,7 @@ public class HTable implements Table {
 
   @Override
   public void delete(final Delete delete) throws IOException {
-    //XTrace.startTask(true);
-    //XTraceUtil.getDebugLogger().tag("DELETE", "DELETE");
-    ClientServiceCallable<Void> callable =
+       ClientServiceCallable<Void> callable =
         new ClientServiceCallable<Void>(this.connection, getName(), delete.getRow(),
             this.rpcControllerFactory.newController(), delete.getPriority()) {
       @Override
@@ -520,8 +516,7 @@ public class HTable implements Table {
   @Override
   public void delete(final List<Delete> deletes)
   throws IOException {
-    //XTrace.startTask(true);
-    //XTraceUtil.getDebugLogger().tag("DELETE", "DELETE");
+
     Object[] results = new Object[deletes.size()];
     try {
       batch(deletes, results, writeRpcTimeoutMs);
@@ -543,10 +538,6 @@ public class HTable implements Table {
 
   @Override
   public void put(final Put put) throws IOException {
-    //XTrace.startTask(true);
-    //XTraceUtil.getDebugLogger().tag("PUT", "PUT");
-    //XTraceUtil.getDebugLogger().log("start put");
-
     validatePut(put);
     ClientServiceCallable<Void> callable =
         new ClientServiceCallable<Void>(this.connection, getName(), put.getRow(),
@@ -565,11 +556,7 @@ public class HTable implements Table {
 
   @Override
   public void put(final List<Put> puts) throws IOException {
-    //XTrace.startTask(true);
-    //XTraceUtil.getDebugLogger().tag("PUT MULTI", "PUT MULTI");
-    //XTraceUtil.getDebugLogger().log("start put");
-
-    for (Put put : puts) {
+      for (Put put : puts) {
       validatePut(put);
     }
     Object[] results = new Object[puts.size()];
@@ -582,9 +569,7 @@ public class HTable implements Table {
 
   @Override
   public void mutateRow(final RowMutations rm) throws IOException {
-    //XTrace.startTask(true);
-    //XTraceUtil.getDebugLogger().tag("MUTATE ROW","MUTATE ROW");
-    CancellableRegionServerCallable<MultiResponse> callable =
+        CancellableRegionServerCallable<MultiResponse> callable =
       new CancellableRegionServerCallable<MultiResponse>(this.connection, getName(), rm.getRow(),
           rpcControllerFactory.newController(), writeRpcTimeoutMs,
           new RetryingTimeTracker().start(), rm.getMaxPriority()) {

@@ -5,45 +5,24 @@ import edu.brown.cs.systems.xtrace.XTraceBaggageInterface;
 
 public aspect TaskStart
 {
-    //pointcut onTableCall(): call(* org.apache.hadoop.hbase.client.Table.*(..));
-    //pointcut onTableCall(): call(public * org.apache.hadoop.hbase.client.HTable.*(..));
-    //pointcut onAdminCall(): call(* org.apache.hadoop.hbase.client.Admin.*(..));
-    pointcut onAdminCall(): call(public * org.apache.hadoop.hbase.client.HBaseAdmin.*(..));
+    pointcut onAdminCall(): within(org.apache.hadoop.hbase.client.HBaseAdmin) && execution(public * *(..));
+    pointcut onTableCall(): within(org.apache.hadoop.hbase.client.HTable) && execution(public * *(..));
 
-    pointcut onClient(): onAdminCall();
+    pointcut onClient(): onAdminCall() || onTableCall();
 
-   // before(): onClient(){
-//      if(!XTraceBaggageInterface.hasTaskID()){
-//            XTrace.startTask(true);
-//            String mname = thisJoinPoint.toShortString();
-//            XTrace.getDefaultLogger().tag(mname, mname);
-//            XTrace.getDefaultLogger().log("test before");
-//       }
-  //  }
-
-    // after(): onClient(){
-         //   Baggage.discard();
-   //  }
-
-     Object around(): onClient() {
-      if(!XTraceBaggageInterface.hasTaskID()){
-                 XTrace.startTask(true);
-                 String mname = thisJoinPoint.toShortString();
-                 XTrace.getDefaultLogger().tag(mname, mname);
-                 XTrace.getDefaultLogger().log("test before");
-                 try{
-                 return proceed();
-                 }
-                 finally{
-                 XTrace.getDefaultLogger().log("test after");
-                 Baggage.discard();
-                 }
-       }
-       else{
+    Object around(): onClient() {
+       if (!XTraceBaggageInterface.hasTaskID()) {
+         XTrace.startTask(true);
+         String mname = thisJoinPoint.toShortString();
+         XTrace.getDefaultLogger().tag(mname, mname);
+         try {
+           return proceed();
+         } finally {
+           Baggage.discard();
+         }
+       } else {
          return proceed();
        }
      }
-
-
 
 }

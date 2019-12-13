@@ -1,16 +1,14 @@
 import edu.brown.cs.systems.xtrace.XTrace;
-import org.aspectj.lang.annotation.*;
 
-@Aspect
-public class DiscoverControlFlow
+
+public aspect DiscoverControlFlow
 {
 
-    @Pointcut("execution(* org.apache.hadoop.hbase..*(..))")
-    public void hbaseMethod() {}
+    private static final boolean ENABLED = false;
+    pointcut onHBaseMethod(): execution(* org.apache.hadoop.hbase..*(..)) && if(ENABLED);
 
-    @Before("hbaseMethod()")
-    public void logDiscover() {
-        XTrace.getDefaultLogger().log("DISCOVER call: ");
+    before(): onHBaseMethod() {
+       XTrace.getDefaultLogger().log("DISCOVER call: ");
    }
 
 }

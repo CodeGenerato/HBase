@@ -46,7 +46,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.Abortable;
 import org.apache.hadoop.hbase.CacheEvictionStats;
@@ -624,12 +623,7 @@ public class HBaseAdmin implements Admin {
   @Override
   public void createTable(final TableDescriptor desc, byte [][] splitKeys)
       throws IOException {
-//    if(!XTraceBaggageInterface.hasTaskID()) {
-//      XTrace.startTask(true);
-//      XTrace.getDefaultLogger().tag("Client create table", "CreateTable");
       get(createTableAsync(desc, splitKeys), syncWaitTimeout, TimeUnit.MILLISECONDS);
-//      Baggage.discard();
-//    }
   }
 
   @Override
@@ -703,9 +697,7 @@ public class HBaseAdmin implements Admin {
 
   @Override
   public void deleteTable(final TableName tableName) throws IOException {
-    //XTrace.startTask(true);
-    XTrace.getDefaultLogger().tag("Client create table", "CreateTable");
-    get(deleteTableAsync(tableName), syncWaitTimeout, TimeUnit.MILLISECONDS);
+      get(deleteTableAsync(tableName), syncWaitTimeout, TimeUnit.MILLISECONDS);
   }
 
   @Override
@@ -3095,7 +3087,6 @@ public class HBaseAdmin implements Admin {
   throws IOException {
     RpcRetryingCaller<V> caller = rpcCallerFactory.newCaller(rpcTimeout);
     try {
-      XTrace.getDefaultLogger().log("client: executeCallable: "+callable);
       return caller.callWithRetries(callable, operationTimeout);
     } finally {
       callable.close();
