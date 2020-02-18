@@ -51,6 +51,10 @@
       </testResource>
     </testResources>
     <plugins>
+      <plugin>
+        <groupId>de.icongmbh.oss.maven.plugins</groupId>
+        <artifactId>javassist-maven-plugin</artifactId>
+      </plugin>
       <!-- licensing info from our bundled works -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

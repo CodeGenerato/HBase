@@ -51,6 +51,11 @@
     </testResources>
     <plugins>
       <plugin>
+        <groupId>de.icongmbh.oss.maven.plugins</groupId>
+        <artifactId>javassist-maven-plugin</artifactId>
+      </plugin>
+
+      <plugin>
         <!--Make it so assembly:single does nothing in here-->
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>

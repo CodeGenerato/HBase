@@ -59,6 +59,10 @@
     </testResources>
     <plugins>
       <plugin>
+        <groupId>de.icongmbh.oss.maven.plugins</groupId>
+        <artifactId>javassist-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-remote-resources-plugin</artifactId>
       </plugin>

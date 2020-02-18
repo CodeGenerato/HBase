@@ -35,6 +35,10 @@
   </properties>
   <build>
     <plugins>
+      <plugin>
+        <groupId>de.icongmbh.oss.maven.plugins</groupId>
+        <artifactId>javassist-maven-plugin</artifactId>
+      </plugin>
       <!-- Make a jar and put the sources in the jar -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

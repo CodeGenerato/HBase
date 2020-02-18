@@ -33,6 +33,10 @@
   <description>A real-time monitoring tool for HBase like Unix's top command</description>
   <build>
     <plugins>
+      <plugin>
+        <groupId>de.icongmbh.oss.maven.plugins</groupId>
+        <artifactId>javassist-maven-plugin</artifactId>
+      </plugin>
       <!-- Make a jar and put the sources in the jar -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

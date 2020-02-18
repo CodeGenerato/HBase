@@ -897,7 +897,8 @@
       </plugins>
     </pluginManagement>
     <plugins>
-   <plugin>
+
+           <plugin>
      <groupId>org.codehaus.mojo</groupId>
      <artifactId>aspectj-maven-plugin</artifactId>
      <version>1.8</version>
@@ -920,7 +921,7 @@
          <aspectLibrary>
            <groupId>edu.brown.cs.systems</groupId>
            <artifactId>xtrace-aspects</artifactId>
-	
+
          </aspectLibrary>
 	<aspectLibrary>
               <groupId>org.apache.hbase</groupId>
@@ -1546,6 +1547,7 @@
          property as of javadoc-plugin 3.0.0 -->
     <doclint>none</doclint>
     <tracingplane.version>4.0</tracingplane.version>
+    <tracker.inst.dynamic>true</tracker.inst.dynamic>
   </properties>
   <!-- Sorted by groups of dependencies then groupId and artifactId -->
 
@@ -2265,7 +2267,7 @@
         <artifactId>xtrace-aspects</artifactId>
         <version>${tracingplane.version}</version>
        </dependency>
-  
+
   </dependencies>
 
   <!--
@@ -2313,6 +2315,44 @@
       <build>
         <pluginManagement>
           <plugins>
+
+            <plugin>
+              <groupId>de.icongmbh.oss.maven.plugins</groupId>
+              <artifactId>javassist-maven-plugin</artifactId>
+              <version>2.0.0</version>
+              <configuration>
+                <skip>${tracker.inst.dynamic}</skip>
+                <includeTestClasses>false</includeTestClasses>
+                <transformerClasses>
+                  <transformerClass>
+                    <className>boundarydetection.agent.Agent</className>
+                    <properties>
+                    </properties>
+                  </transformerClass>
+                </transformerClasses>
+              </configuration>
+              <executions>
+                <execution>
+                  <phase>process-classes</phase>
+                  <goals>
+                    <goal>javassist</goal>
+                  </goals>
+                </execution>
+              </executions>
+              <dependencies>
+                <dependency>
+                  <groupId>boundaryDetection</groupId>
+                  <artifactId>agent</artifactId>
+                  <version>0.1-SNAPSHOT</version>
+                </dependency>
+                <dependency>
+                  <groupId>boundaryDetection</groupId>
+                  <artifactId>tracker</artifactId>
+                  <version>0.1-SNAPSHOT</version>
+                </dependency>
+              </dependencies>
+            </plugin>
+
             <plugin>
               <groupId>org.codehaus.mojo</groupId>
               <artifactId>findbugs-maven-plugin</artifactId>
@@ -2350,6 +2390,7 @@
       </properties>
       <build>
         <plugins>
+
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-antrun-plugin</artifactId>
