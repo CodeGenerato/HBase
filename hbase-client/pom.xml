@@ -77,6 +77,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>boundaryDetection</groupId>
+      <artifactId>tracker</artifactId>
+      <version>0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.hbase.thirdparty</groupId>
       <artifactId>hbase-shaded-protobuf</artifactId>
     </dependency>

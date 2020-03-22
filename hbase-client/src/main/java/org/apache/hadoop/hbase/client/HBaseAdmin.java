@@ -17,6 +17,7 @@
  */
 package org.apache.hadoop.hbase.client;
 
+import boundarydetection.tracker.AccessTracker;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import com.google.protobuf.RpcController;
@@ -623,7 +624,11 @@ public class HBaseAdmin implements Admin {
   @Override
   public void createTable(final TableDescriptor desc, byte [][] splitKeys)
       throws IOException {
+      AccessTracker.startTracking();
+      AccessTracker.resetTracking();
+      AccessTracker.startTask();
       get(createTableAsync(desc, splitKeys), syncWaitTimeout, TimeUnit.MILLISECONDS);
+      AccessTracker.stopTask();
   }
 
   @Override
