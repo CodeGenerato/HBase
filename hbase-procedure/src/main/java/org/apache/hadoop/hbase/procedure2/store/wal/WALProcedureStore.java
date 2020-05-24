@@ -33,6 +33,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+
+import boundarydetection.tracker.AccessTracker;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileAlreadyExistsException;
@@ -806,6 +808,10 @@ public class WALProcedureStore extends ProcedureStoreBase {
     try {
       while (isRunning()) {
         try {
+//          AccessTracker.enableAutoTaskInheritance();
+//          AccessTracker.enableEventLogging();
+//          AccessTracker.resetTracking();
+//          AccessTracker.startTask();
           // Wait until new data is available
           if (slotIndex == 0) {
             if (!loading.get()) {
@@ -871,6 +877,7 @@ public class WALProcedureStore extends ProcedureStoreBase {
           sendAbortProcessSignal();
           throw t;
         } finally {
+         // AccessTracker.stopTask();
           syncCond.signalAll();
         }
       }

@@ -21,6 +21,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 
+import boundarydetection.tracker.AccessTracker;
 import org.apache.hadoop.hbase.CallDroppedException;
 import org.apache.hadoop.hbase.CellScanner;
 import org.apache.hadoop.hbase.HBaseInterfaceAudience;
@@ -101,6 +102,7 @@ public class CallRunner {
   }
 
   public void run() {
+    boolean tracking=false;
     try {
 
       RPCProtos.RequestHeader rq = call.getHeader();
@@ -109,6 +111,22 @@ public class CallRunner {
       if(XTraceUtil.checkBaggageForNull(bs)) {
         Baggage.start(bs.toByteArray());
       }
+
+      // ReportRegionStateTransition
+      // IsMasterRunning
+      // getProcedureResult
+//      if(rq.hasMethodName()) {
+//        System.out.println("NAME: "+ rq.getMethodName());
+//        if (rq.hasMethodName() && rq.getMethodName().equals("CreateTable")) {
+//          tracking=true;
+//          System.out.println("TRACKING: "+ rq.getMethodName());
+
+          AccessTracker.enableAutoTaskInheritance();
+          AccessTracker.enableEventLogging();
+          AccessTracker.resetTracking();
+          AccessTracker.startTask();
+       // }
+     // }
 
       if (call.disconnectSince() >= 0) {
         if (RpcServer.LOG.isDebugEnabled()) {
@@ -207,6 +225,10 @@ public class CallRunner {
         this.rpcServer.addCallSize(call.getSize() * -1);
       }
       cleanup();
+
+       AccessTracker.stopTask();
+       tracking=false;
+
       Baggage.discard();
     }
   }

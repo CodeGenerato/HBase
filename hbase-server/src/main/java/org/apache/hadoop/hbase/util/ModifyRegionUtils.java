@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import boundarydetection.tracker.AccessTracker;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HConstants;
@@ -142,7 +143,13 @@ public abstract class ModifyRegionUtils {
       completionService.submit(new Callable<RegionInfo>() {
         @Override
         public RegionInfo call() throws IOException {
-          return createRegion(conf, rootDir, tableDescriptor, newRegion, task);
+         // AccessTracker.enableAutoTaskInheritance();
+         // AccessTracker.enableEventLogging();
+         // AccessTracker.resetTracking();
+         // AccessTracker.startTask();
+          RegionInfo m = createRegion(conf, rootDir, tableDescriptor, newRegion, task);
+         // AccessTracker.stopTask();
+          return m;
         }
       });
     }
@@ -205,7 +212,12 @@ public abstract class ModifyRegionUtils {
       completionService.submit(new Callable<Void>() {
         @Override
         public Void call() throws IOException {
+//          AccessTracker.enableAutoTaskInheritance();
+//          AccessTracker.enableEventLogging();
+//          AccessTracker.resetTracking();
+//          AccessTracker.startTask();
           task.editRegion(hri);
+//          AccessTracker.stopTask();
           return null;
         }
       });

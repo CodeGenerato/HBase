@@ -21,6 +21,7 @@ import static org.apache.hadoop.hbase.client.ConnectionUtils.calcEstimatedSize;
 import static org.apache.hadoop.hbase.client.ConnectionUtils.createScanResultCache;
 import static org.apache.hadoop.hbase.client.ConnectionUtils.incRegionCountMetrics;
 
+import boundarydetection.tracker.AccessTracker;
 import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hbase.thirdparty.com.google.common.annotations.VisibleForTesting;
@@ -301,27 +302,36 @@ public abstract class ClientScanner extends AbstractClientScanner {
   }
 
   protected Result nextWithSyncCache() throws IOException {
+
+    //AccessTracker.enableAutoTaskInheritance();
+    //AccessTracker.enableEventLogging();
+    //AccessTracker.resetTracking();
+    //AccessTracker.startTask();
     Result result = cache.poll();
-    if (result != null) {
-      return result;
-    }
-    // If there is nothing left in the cache and the scanner is closed,
-    // return a no-op
-    if (this.closed) {
-      return null;
-    }
+   try {
+     if (result != null) {
+       return result;
+     }
+     // If there is nothing left in the cache and the scanner is closed,
+     // return a no-op
+     if (this.closed) {
+       return null;
+     }
 
-    XTraceUtil.getDebugLogger().log("next, load cache");
-    loadCache();
+     XTraceUtil.getDebugLogger().log("next, load cache");
+     loadCache();
 
-    // try again to load from cache
-    result = cache.poll();
+     // try again to load from cache
+     result = cache.poll();
 
-    // if we exhausted this scanner before calling close, write out the scan metrics
-    if (result == null) {
-      writeScanMetrics();
-    }
-    return result;
+     // if we exhausted this scanner before calling close, write out the scan metrics
+     if (result == null) {
+       writeScanMetrics();
+     }
+     return result;
+   }finally {
+     //AccessTracker.stopTask();
+   }
   }
 
   @VisibleForTesting

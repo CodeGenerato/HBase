@@ -21,6 +21,7 @@ package org.apache.hadoop.hbase.client;
 // DO NOT MAKE USE OF THESE IMPORTS! THEY ARE HERE FOR COPROCESSOR ENDPOINTS ONLY.
 // Internally, we use shaded protobuf. This below are part of our public API.
 //SEE ABOVE NOTE!
+import boundarydetection.tracker.AccessTracker;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import com.google.protobuf.Service;
@@ -306,39 +307,48 @@ public class HTable implements Table {
    */
   @Override
   public ResultScanner getScanner(Scan scan) throws IOException {
-    if (scan.getCaching() <= 0) {
-      scan.setCaching(scannerCaching);
-    }
-    if (scan.getMaxResultSize() <= 0) {
-      scan.setMaxResultSize(scannerMaxResultSize);
-    }
-    if (scan.getMvccReadPoint() > 0) {
-      // it is not supposed to be set by user, clear
-      scan.resetMvccReadPoint();
-    }
-    Boolean async = scan.isAsyncPrefetch();
-    if (async == null) {
-      async = connConfiguration.isClientScannerAsyncPrefetch();
-    }
+    //AccessTracker.enableAutoTaskInheritance();
+    //AccessTracker.enableEventLogging();
+    //AccessTracker.resetTracking();
+    //AccessTracker.startTask();
 
-    if (scan.isReversed()) {
-      XTraceUtil.getDebugLogger().log("reversed client scanner");
-      return new ReversedClientScanner(getConfiguration(), scan, getName(),
-        this.connection, this.rpcCallerFactory, this.rpcControllerFactory,
-        pool, connConfiguration.getReplicaCallTimeoutMicroSecondScan());
-    } else {
-      if (async) {
-        XTraceUtil.getDebugLogger().log("async client prefetch scanner");
-        return new ClientAsyncPrefetchScanner(getConfiguration(), scan, getName(), this.connection,
-            this.rpcCallerFactory, this.rpcControllerFactory,
-            pool, connConfiguration.getReplicaCallTimeoutMicroSecondScan());
-      } else {
-        XTraceUtil.getDebugLogger().log("simple client scanner");
-        return new ClientSimpleScanner(getConfiguration(), scan, getName(), this.connection,
-            this.rpcCallerFactory, this.rpcControllerFactory,
-            pool, connConfiguration.getReplicaCallTimeoutMicroSecondScan());
-      }
-    }
+   try {
+     if (scan.getCaching() <= 0) {
+       scan.setCaching(scannerCaching);
+     }
+     if (scan.getMaxResultSize() <= 0) {
+       scan.setMaxResultSize(scannerMaxResultSize);
+     }
+     if (scan.getMvccReadPoint() > 0) {
+       // it is not supposed to be set by user, clear
+       scan.resetMvccReadPoint();
+     }
+     Boolean async = scan.isAsyncPrefetch();
+     if (async == null) {
+       async = connConfiguration.isClientScannerAsyncPrefetch();
+     }
+
+     if (scan.isReversed()) {
+       XTraceUtil.getDebugLogger().log("reversed client scanner");
+       return new ReversedClientScanner(getConfiguration(), scan, getName(),
+               this.connection, this.rpcCallerFactory, this.rpcControllerFactory,
+               pool, connConfiguration.getReplicaCallTimeoutMicroSecondScan());
+     } else {
+       if (async) {
+         XTraceUtil.getDebugLogger().log("async client prefetch scanner");
+         return new ClientAsyncPrefetchScanner(getConfiguration(), scan, getName(), this.connection,
+                 this.rpcCallerFactory, this.rpcControllerFactory,
+                 pool, connConfiguration.getReplicaCallTimeoutMicroSecondScan());
+       } else {
+         XTraceUtil.getDebugLogger().log("simple client scanner");
+         return new ClientSimpleScanner(getConfiguration(), scan, getName(), this.connection,
+                 this.rpcCallerFactory, this.rpcControllerFactory,
+                 pool, connConfiguration.getReplicaCallTimeoutMicroSecondScan());
+       }
+     }
+   }finally {
+    // AccessTracker.stopTask();
+   }
   }
 
   /**
@@ -538,6 +548,11 @@ public class HTable implements Table {
 
   @Override
   public void put(final Put put) throws IOException {
+   //AccessTracker.enableAutoTaskInheritance();
+   //AccessTracker.enableEventLogging();
+   //AccessTracker.resetTracking();
+   //AccessTracker.startTask();
+
     validatePut(put);
     ClientServiceCallable<Void> callable =
         new ClientServiceCallable<Void>(this.connection, getName(), put.getRow(),
@@ -552,6 +567,7 @@ public class HTable implements Table {
     };
     rpcCallerFactory.<Void> newCaller(this.writeRpcTimeoutMs).callWithRetries(callable,
         this.operationTimeoutMs);
+   // AccessTracker.stopTask();
   }
 
   @Override
@@ -569,6 +585,7 @@ public class HTable implements Table {
 
   @Override
   public void mutateRow(final RowMutations rm) throws IOException {
+    //AccessTracker.startTask();
         CancellableRegionServerCallable<MultiResponse> callable =
       new CancellableRegionServerCallable<MultiResponse>(this.connection, getName(), rm.getRow(),
           rpcControllerFactory.newController(), writeRpcTimeoutMs,
@@ -603,6 +620,8 @@ public class HTable implements Table {
             .build();
     AsyncRequestFuture ars = multiAp.submit(task);
     ars.waitUntilDone();
+
+    //AccessTracker.stopTask();
     if (ars.hasError()) {
       throw ars.getErrors();
     }

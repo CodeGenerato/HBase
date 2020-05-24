@@ -32,6 +32,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import boundarydetection.tracker.AccessTracker;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -188,7 +189,12 @@ public class HFileArchiver {
     List<Future<Void>> futures = new ArrayList<>(regionDirList.size());
     for (Path regionDir: regionDirList) {
       Future<Void> future = getArchiveExecutor(conf).submit(() -> {
+//        AccessTracker.enableAutoTaskInheritance();
+//        AccessTracker.enableEventLogging();
+//        AccessTracker.resetTracking();
+//        AccessTracker.startTask();
         archiveRegion(fs, rootDir, tableDir, regionDir);
+//        AccessTracker.stopTask();
         return null;
       });
       futures.add(future);

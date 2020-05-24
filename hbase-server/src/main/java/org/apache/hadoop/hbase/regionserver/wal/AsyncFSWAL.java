@@ -19,6 +19,7 @@ package org.apache.hadoop.hbase.regionserver.wal;
 
 import static org.apache.hadoop.hbase.util.FutureUtils.addListener;
 
+import boundarydetection.tracker.AccessTracker;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.Sequence;
 import com.lmax.disruptor.Sequencer;
@@ -513,12 +514,15 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
       XTrace.startTask(true);
       XTraceUtil.getDebugLogger().tag("Batched WAL OP", "Batched WAL OP");
       bag = Baggage.fork();
+//      AccessTracker.enableAutoTaskInheritance();
+//      AccessTracker.enableEventLogging();
+//      AccessTracker.resetTracking();
+//      AccessTracker.startTask();
     }
     else{
       Baggage.join(bag);
     }
     XTraceUtil.getDebugLogger().log("consume start");
-
 
     try {
       int currentEpochAndState = epochAndState;

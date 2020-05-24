@@ -37,6 +37,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import boundarydetection.tracker.AccessTracker;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.exceptions.IllegalArgumentIOException;
@@ -2000,6 +2002,7 @@ public class ProcedureExecutor<TEnvironment> {
     return completed.size();
   }
 
+  private static boolean activeTask;
   // ==========================================================================
   //  Worker Thread
   // ==========================================================================
@@ -2036,6 +2039,17 @@ public class ProcedureExecutor<TEnvironment> {
           if (proc == null) {
             continue;
           }
+          boolean hasTask=false;
+          synchronized (ProcedureExecutor.class){
+            if(!activeTask) {
+              hasTask=true;
+              activeTask = true;
+             // AccessTracker.enableAutoTaskInheritance();
+             // AccessTracker.enableEventLogging();
+              //AccessTracker.resetTracking(); DONT USE THIS IF THIS IS CALLED SIMULTANOUSLY, this resets the whole tracking data
+              //AccessTracker.startTask();
+            }
+          }
           if(XTraceUtil.checkBaggageForNull(proc.bag)) {
             Baggage.start(proc.bag);
           }
@@ -2063,6 +2077,16 @@ public class ProcedureExecutor<TEnvironment> {
             this.activeProcedure = null;
             lastUpdate = EnvironmentEdgeManager.currentTime();
             executionStartTime.set(Long.MAX_VALUE);
+
+            synchronized (ProcedureExecutor.class){
+              if(hasTask) {
+                activeTask=false;
+                hasTask = false;
+               // AccessTracker.stopTask();
+                //AccessTracker.resetTracking(); // Is needed because things the thread wrote
+                // could be read by another thread with another task later on
+              }
+            }
             Baggage.discard();
           }
         }
