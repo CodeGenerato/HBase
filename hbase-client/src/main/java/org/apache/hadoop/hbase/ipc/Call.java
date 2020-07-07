@@ -17,6 +17,7 @@
  */
 package org.apache.hadoop.hbase.ipc;
 
+import boundarydetection.tracker.tasks.Task;
 import org.apache.hbase.thirdparty.io.netty.util.Timeout;
 
 import org.apache.hbase.thirdparty.com.google.protobuf.Descriptors;
@@ -43,6 +44,7 @@ class Call {
   final Message param; // rpc request method param object
 
   public volatile DetachedBaggage bag = null;
+  public volatile Task task = null;
 
   /**
    * Optionally has cells when making call. Optionally has cells set on response. Used passing cells

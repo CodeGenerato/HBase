@@ -21,7 +21,8 @@ package org.apache.hadoop.hbase.ipc;
 import static org.apache.hadoop.hbase.ipc.IPCUtil.toIOE;
 import static org.apache.hadoop.hbase.ipc.IPCUtil.wrapException;
 
-import org.apache.hadoop.hbase.exceptions.IllegalArgumentIOException;
+import boundarydetection.tracker.AccessTracker;
+import boundarydetection.tracker.tasks.Task;
 import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hbase.thirdparty.com.google.common.annotations.VisibleForTesting;
 import org.apache.hbase.thirdparty.com.google.common.base.Preconditions;
@@ -421,6 +422,10 @@ public abstract class AbstractRpcClient<T extends RpcConnection> implements RpcC
             onCallFinished(call, hrc, addr, callback);
           }
         }, cs);
+
+    Task t = AccessTracker.fork();
+    call.task = t;
+
     ConnectionId remoteId = new ConnectionId(ticket, md.getService().getName(), addr);
     int count = counter.incrementAndGet();
     try {

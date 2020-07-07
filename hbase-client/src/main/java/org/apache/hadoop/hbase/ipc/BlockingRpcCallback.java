@@ -18,6 +18,8 @@
 
 package org.apache.hadoop.hbase.ipc;
 
+import boundarydetection.tracker.AccessTracker;
+import boundarydetection.tracker.tasks.Task;
 import org.apache.hbase.thirdparty.com.google.protobuf.RpcCallback;
 
 import java.io.IOException;
@@ -39,6 +41,7 @@ public class BlockingRpcCallback<R> implements RpcCallback<R> {
   private R result;
   private boolean resultSet = false;
   private volatile DetachedBaggage bag = null;
+  private volatile Task task = null;
   /**
    * Called on completion of the RPC call with the response object, or {@code null} in the case of
    * an error.
@@ -50,6 +53,7 @@ public class BlockingRpcCallback<R> implements RpcCallback<R> {
       result = parameter;
       resultSet = true;
       bag = Baggage.fork();
+      task = AccessTracker.fork();
       this.notifyAll();
     }
   }
@@ -71,6 +75,10 @@ public class BlockingRpcCallback<R> implements RpcCallback<R> {
       }
     }
     Baggage.join(bag);
+    if(task!=null){
+      AccessTracker.join(task);
+      AccessTracker.getTask().setWriteCapability(false);
+    }
     return result;
   }
 }

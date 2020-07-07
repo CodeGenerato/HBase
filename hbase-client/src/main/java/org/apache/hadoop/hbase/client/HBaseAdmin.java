@@ -624,12 +624,10 @@ public class HBaseAdmin implements Admin {
   @Override
   public void createTable(final TableDescriptor desc, byte [][] splitKeys)
       throws IOException {
-      //AccessTracker.enableAutoTaskInheritance();
-      //AccessTracker.enableEventLogging();
-      //AccessTracker.resetTracking();
-      //AccessTracker.startTask();
+//      AccessTracker.resetTracking();
+//      AccessTracker.startTask();
       get(createTableAsync(desc, splitKeys), syncWaitTimeout, TimeUnit.MILLISECONDS);
-      //AccessTracker.stopTask();
+//      AccessTracker.stopTask();
   }
 
   @Override

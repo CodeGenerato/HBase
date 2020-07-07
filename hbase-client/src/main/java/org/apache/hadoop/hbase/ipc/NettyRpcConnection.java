@@ -22,6 +22,8 @@ import static org.apache.hadoop.hbase.ipc.CallEvent.Type.TIMEOUT;
 import static org.apache.hadoop.hbase.ipc.IPCUtil.setCancelled;
 import static org.apache.hadoop.hbase.ipc.IPCUtil.toIOE;
 
+import boundarydetection.tracker.AccessTracker;
+import boundarydetection.tracker.tasks.Task;
 import org.apache.hadoop.hbase.exceptions.IllegalArgumentIOException;
 import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hbase.thirdparty.io.netty.handler.timeout.ReadTimeoutHandler;
@@ -337,6 +339,7 @@ class NettyRpcConnection extends RpcConnection {
           XTraceUtil.getDebugLogger().log("send RPC");
           call.bag=Baggage.fork();
 
+          Task t = AccessTracker.fork();
           // We must move the whole writeAndFlush call inside event loop otherwise there will be a
           // race condition.
           // In netty's DefaultChannelPipeline, it will find the first outbound handler in the
@@ -355,7 +358,12 @@ class NettyRpcConnection extends RpcConnection {
 
               @Override
               public void run() {
+                if (t != null) {
+                  AccessTracker.join(t);
+                  AccessTracker.getTask().setWriteCapability(false);
+                }
                 write(ch, call);
+                AccessTracker.discard();
               }
             });
           }

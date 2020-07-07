@@ -121,10 +121,10 @@ public class CallRunner {
 //          tracking=true;
 //          System.out.println("TRACKING: "+ rq.getMethodName());
 
-          AccessTracker.enableAutoTaskInheritance();
-          AccessTracker.enableEventLogging();
-          AccessTracker.resetTracking();
-          AccessTracker.startTask();
+//          AccessTracker.enableAutoTaskInheritance();
+//          AccessTracker.enableEventLogging();
+//          AccessTracker.resetTracking();
+//          AccessTracker.startTask();
        // }
      // }
 
@@ -226,7 +226,7 @@ public class CallRunner {
       }
       cleanup();
 
-       AccessTracker.stopTask();
+       //AccessTracker.stopTask();
        tracking=false;
 
       Baggage.discard();
