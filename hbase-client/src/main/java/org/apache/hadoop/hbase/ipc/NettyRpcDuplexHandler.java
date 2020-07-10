@@ -17,6 +17,7 @@
  */
 package org.apache.hadoop.hbase.ipc;
 
+import boundarydetection.tracker.AccessTracker;
 import org.apache.hadoop.hbase.exceptions.ConnectionClosedException;
 import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hbase.thirdparty.com.google.protobuf.Message;
@@ -35,6 +36,7 @@ import org.apache.hbase.thirdparty.io.netty.util.concurrent.PromiseCombiner;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.hbase.CellScanner;
 import org.apache.yetus.audience.InterfaceAudience;
@@ -183,6 +185,14 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
         }
         return;
       }
+
+//      RESPONSE: IsMasterRunning
+//      RESPONSE: getProcedureResult
+//
+      //System.out.println("RESPONSE: "+call.md.getName());
+      if(call.md.getName().equals("CreateTable")){
+        AccessTracker.startTask("NettyClientResponse_"+call.md.getName());
+      }
       if (remoteExc != null) {
         call.setException(remoteExc);
         return;
@@ -208,6 +218,7 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
       }
       call.setResponse(value, cellBlockScanner);
     }finally {
+      AccessTracker.stopTask();
       Baggage.discard();
     }
   }

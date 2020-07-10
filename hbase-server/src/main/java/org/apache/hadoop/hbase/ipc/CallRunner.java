@@ -102,7 +102,6 @@ public class CallRunner {
   }
 
   public void run() {
-    boolean tracking=false;
     try {
 
       RPCProtos.RequestHeader rq = call.getHeader();
@@ -115,18 +114,10 @@ public class CallRunner {
       // ReportRegionStateTransition
       // IsMasterRunning
       // getProcedureResult
-//      if(rq.hasMethodName()) {
-//        System.out.println("NAME: "+ rq.getMethodName());
-//        if (rq.hasMethodName() && rq.getMethodName().equals("CreateTable")) {
-//          tracking=true;
-//          System.out.println("TRACKING: "+ rq.getMethodName());
-
-//          AccessTracker.enableAutoTaskInheritance();
-//          AccessTracker.enableEventLogging();
-//          AccessTracker.resetTracking();
-//          AccessTracker.startTask();
-       // }
-     // }
+        if (rq.hasMethodName() && rq.getMethodName().equals("CreateTable")) {
+          AccessTracker.resetTracking();
+          AccessTracker.startTask("CallRunner_"+rq.getMethodName());
+        }
 
       if (call.disconnectSince() >= 0) {
         if (RpcServer.LOG.isDebugEnabled()) {
@@ -226,9 +217,7 @@ public class CallRunner {
       }
       cleanup();
 
-       //AccessTracker.stopTask();
-       tracking=false;
-
+      AccessTracker.stopTask();
       Baggage.discard();
     }
   }

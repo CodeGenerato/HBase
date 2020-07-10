@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import boundarydetection.tracker.tasks.Task;
 import org.apache.hadoop.hbase.exceptions.TimeoutIOException;
 import org.apache.hadoop.hbase.metrics.Counter;
 import org.apache.hadoop.hbase.metrics.Histogram;
@@ -129,6 +131,7 @@ public abstract class Procedure<TEnvironment> implements Comparable<Procedure<TE
 
   // XTRACE
   public volatile DetachedBaggage bag = null;
+  public volatile Task t = null;
 
   // Unchanged after initialization
   private NonceKey nonceKey = null;

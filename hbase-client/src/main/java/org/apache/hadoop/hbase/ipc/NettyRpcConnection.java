@@ -358,12 +358,17 @@ class NettyRpcConnection extends RpcConnection {
 
               @Override
               public void run() {
-                if (t != null) {
-                  AccessTracker.join(t);
-                  AccessTracker.getTask().setWriteCapability(false);
+                try {
+                  if (t != null) {
+                    AccessTracker.join(t);
+                    AccessTracker.getTask().setTag("ClientPassToNetty_" + call.md.getName());
+                    AccessTracker.getTask().setWriteCapability(true);
+                  }
+                  write(ch, call);
+                }finally {
+                  AccessTracker.discard();
                 }
-                write(ch, call);
-                AccessTracker.discard();
+
               }
             });
           }

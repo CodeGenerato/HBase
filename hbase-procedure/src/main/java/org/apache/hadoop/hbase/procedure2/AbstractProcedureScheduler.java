@@ -23,16 +23,13 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.TimeUnit;
 
+import boundarydetection.tracker.AccessTracker;
 import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
-
-import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
 
 @InterfaceAudience.Private
 public abstract class AbstractProcedureScheduler implements ProcedureScheduler {
@@ -129,7 +126,10 @@ public abstract class AbstractProcedureScheduler implements ProcedureScheduler {
   protected void push(final Procedure procedure, final boolean addFront, final boolean notify) {
     XTraceUtil.getDebugLogger().log("Enqueue procedure");
     //TODO XTRACE why not in procedure executer? we anyway never get it anywhere else
-    if(procedure!=null) procedure.bag = Baggage.fork();
+    if(procedure!=null){
+      procedure.t= AccessTracker.fork();
+      procedure.bag = Baggage.fork();
+    }
     schedLock();
     try {
       enqueue(procedure, addFront);

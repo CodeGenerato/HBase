@@ -2039,17 +2039,12 @@ public class ProcedureExecutor<TEnvironment> {
           if (proc == null) {
             continue;
           }
-          boolean hasTask=false;
-          synchronized (ProcedureExecutor.class){
-            if(!activeTask) {
-              hasTask=true;
-              activeTask = true;
-             // AccessTracker.enableAutoTaskInheritance();
-             // AccessTracker.enableEventLogging();
-              //AccessTracker.resetTracking(); DONT USE THIS IF THIS IS CALLED SIMULTANOUSLY, this resets the whole tracking data
-              //AccessTracker.startTask();
-            }
+          if(proc.t!=null) {
+            AccessTracker.join(proc.t);
+            AccessTracker.getTask().setTag("ProcedureExecuter_"+proc.getProcName());
+            AccessTracker.getTask().setWriteCapability(true);
           }
+
           if(XTraceUtil.checkBaggageForNull(proc.bag)) {
             Baggage.start(proc.bag);
           }
@@ -2078,15 +2073,7 @@ public class ProcedureExecutor<TEnvironment> {
             lastUpdate = EnvironmentEdgeManager.currentTime();
             executionStartTime.set(Long.MAX_VALUE);
 
-            synchronized (ProcedureExecutor.class){
-              if(hasTask) {
-                activeTask=false;
-                hasTask = false;
-               // AccessTracker.stopTask();
-                //AccessTracker.resetTracking(); // Is needed because things the thread wrote
-                // could be read by another thread with another task later on
-              }
-            }
+            AccessTracker.discard();
             Baggage.discard();
           }
         }

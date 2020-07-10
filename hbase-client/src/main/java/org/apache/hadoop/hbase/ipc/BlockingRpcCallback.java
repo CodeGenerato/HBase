@@ -20,6 +20,7 @@ package org.apache.hadoop.hbase.ipc;
 
 import boundarydetection.tracker.AccessTracker;
 import boundarydetection.tracker.tasks.Task;
+import boundarydetection.tracker.tasks.TaskCollisionException;
 import org.apache.hbase.thirdparty.com.google.protobuf.RpcCallback;
 
 import java.io.IOException;
@@ -76,8 +77,16 @@ public class BlockingRpcCallback<R> implements RpcCallback<R> {
     }
     Baggage.join(bag);
     if(task!=null){
-      AccessTracker.join(task);
-      AccessTracker.getTask().setWriteCapability(false);
+      try {
+        AccessTracker.tryJoin(task);
+        AccessTracker.getTask().setWriteCapability(true);
+        AccessTracker.getTask().setTag("RPCCallback");
+      }catch (TaskCollisionException e){
+        //In case of a collision we declassfiy here explicitly and add the joiner because we join to the thread that
+        // started a request in HBaseAdmin or HTable. Collision is normal because we start a new task when we got the
+        // response over network
+        AccessTracker.getTask().addJoiner(task);
+      }
     }
     return result;
   }
