@@ -22,7 +22,6 @@ import static org.apache.hadoop.hbase.client.ConnectionUtils.createScanResultCac
 import static org.apache.hadoop.hbase.client.ConnectionUtils.incRegionCountMetrics;
 
 import boundarydetection.tracker.AccessTracker;
-import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.hadoop.hbase.trace.XTraceUtil;
 import org.apache.hbase.thirdparty.com.google.common.annotations.VisibleForTesting;
 

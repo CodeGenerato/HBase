@@ -46,13 +46,6 @@ import org.apache.hadoop.hbase.shaded.protobuf.ProtobufUtil;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.RequestHeader;
 import org.apache.hadoop.hbase.util.Pair;
 
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
-
-
-import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
-
 /** Reads calls from a connection and queues them for handling. */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
     justification = "False positive according to http://sourceforge.net/p/findbugs/bugs/1032/")
@@ -217,11 +210,11 @@ class SimpleServerRpcConnection extends ServerRpcConnection {
           ProtobufUtil.mergeFrom(builder, cis, headerSize);
           RequestHeader header = (RequestHeader) builder.build();
 
-          if(XTraceUtil.checkBaggageForNull(header.getTraceBaggage())) {
-            Baggage.start(header.getTraceBaggage().toByteArray());
-          }
+//          if(XTraceUtil.checkBaggageForNull(header.getTraceBaggage())) {
+//            Baggage.start(header.getTraceBaggage().toByteArray());
+//          }
 
-          XTraceUtil.getDebugLogger().log("response header read: " + header.toString());
+//          XTraceUtil.getDebugLogger().log("response header read: " + header.toString());
 
           // Notify the client about the offending request
           SimpleServerCall reqTooBig = new SimpleServerCall(header.getCallId(), this.service, null,

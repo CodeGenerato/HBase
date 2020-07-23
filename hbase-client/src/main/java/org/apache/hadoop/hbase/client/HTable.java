@@ -80,10 +80,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.apache.hadoop.hbase.client.ConnectionUtils.checkHasFamilies;
 
-import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
 
 /**
  * An implementation of {@link Table}. Used to communicate with a single HBase table.

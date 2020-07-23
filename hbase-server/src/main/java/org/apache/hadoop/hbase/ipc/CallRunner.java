@@ -39,10 +39,7 @@ import org.apache.hadoop.hbase.util.Pair;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.htrace.core.TraceScope;
 
-import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
+
 
 /**
  * The request processing logic, which is usually executed in thread pools provided by an
@@ -107,9 +104,9 @@ public class CallRunner {
       RPCProtos.RequestHeader rq = call.getHeader();
 
       ByteString bs = rq.getTraceBaggage();
-      if(XTraceUtil.checkBaggageForNull(bs)) {
-        Baggage.start(bs.toByteArray());
-      }
+//      if(XTraceUtil.checkBaggageForNull(bs)) {
+//        Baggage.start(bs.toByteArray());
+//      }
 
       // ReportRegionStateTransition
       // IsMasterRunning
@@ -218,7 +215,7 @@ public class CallRunner {
       cleanup();
 
       AccessTracker.stopTask();
-      Baggage.discard();
+//      Baggage.discard();
     }
   }
 

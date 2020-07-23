@@ -46,8 +46,6 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.CellBlockMeta
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.ExceptionResponse;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.RequestHeader;
 
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
 /**
  * Utility to help ipc'ing.
  */
@@ -111,7 +109,7 @@ class IPCUtil {
     RequestHeader.Builder builder = RequestHeader.newBuilder();
     builder.setCallId(call.id);
 
-    builder.setTraceBaggage(ByteString.copyFrom(Baggage.fork().toByteArray()));
+  //  builder.setTraceBaggage(ByteString.copyFrom(Baggage.fork().toByteArray()));
     //TODO handle htrace API change, see HBASE-18895
     /*if (call.span != null) {
       builder.setTraceInfo(RPCTInfo.newBuilder().setParentId(call.span.getSpanId())

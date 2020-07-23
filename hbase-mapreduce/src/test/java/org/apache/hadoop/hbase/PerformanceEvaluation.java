@@ -1170,10 +1170,10 @@ public class PerformanceEvaluation extends Configured implements Tool {
       if (options.isValueZipf()) {
         this.zipf = new RandomDistribution.Zipf(this.rand, 1, options.getValueSize(), 1.2);
       }
-      XTrace.startTask(true);
-      XTraceUtil.getDebugLogger().tag("CREATE TEST","CREATE TEST");
-      XTraceUtil.getDebugLogger().log(opts.toString());
-      Baggage.discard();
+//      XTrace.startTask(true);
+//      XTraceUtil.getDebugLogger().tag("CREATE TEST","CREATE TEST");
+//      XTraceUtil.getDebugLogger().log(opts.toString());
+//      Baggage.discard();
 
       LOG.info("Sampling 1 every " + everyN + " out of " + opts.perClientRunRows + " total rows.");
     }

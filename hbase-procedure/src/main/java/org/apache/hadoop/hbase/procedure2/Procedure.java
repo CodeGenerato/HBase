@@ -40,10 +40,6 @@ import org.apache.hbase.thirdparty.com.google.common.annotations.VisibleForTesti
 
 import org.apache.hadoop.hbase.shaded.protobuf.generated.ProcedureProtos.ProcedureState;
 
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
-import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
 
 
 /**
@@ -130,7 +126,7 @@ public abstract class Procedure<TEnvironment> implements Comparable<Procedure<TE
   }
 
   // XTRACE
-  public volatile DetachedBaggage bag = null;
+//  public volatile DetachedBaggage bag = null;
   public volatile Task t = null;
 
   // Unchanged after initialization

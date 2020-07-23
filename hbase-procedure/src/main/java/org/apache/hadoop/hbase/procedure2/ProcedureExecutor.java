@@ -64,10 +64,6 @@ import org.apache.hbase.thirdparty.com.google.common.util.concurrent.ThreadFacto
 
 import org.apache.hadoop.hbase.shaded.protobuf.generated.ProcedureProtos.ProcedureState;
 
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
-import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
 
 /**
  * Thread Pool that executes the submitted procedures.
@@ -2045,11 +2041,11 @@ public class ProcedureExecutor<TEnvironment> {
             AccessTracker.getTask().setWriteCapability(true);
           }
 
-          if(XTraceUtil.checkBaggageForNull(proc.bag)) {
-            Baggage.start(proc.bag);
-          }
+//          if(XTraceUtil.checkBaggageForNull(proc.bag)) {
+//            Baggage.start(proc.bag);
+//          }
 
-          XTraceUtil.getDebugLogger().log(proc.toString());
+//          XTraceUtil.getDebugLogger().log(proc.toString());
 
           this.activeProcedure = proc;
           int activeCount = activeExecutorCount.incrementAndGet();
@@ -2074,7 +2070,7 @@ public class ProcedureExecutor<TEnvironment> {
             executionStartTime.set(Long.MAX_VALUE);
 
             AccessTracker.discard();
-            Baggage.discard();
+//            Baggage.discard();
           }
         }
       } catch (Throwable t) {

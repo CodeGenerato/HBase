@@ -74,10 +74,7 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.ExceptionResp
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.RequestHeader;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.ResponseHeader;
 
-import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
+
 
 /**
  *
@@ -154,8 +151,8 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
             + " to the write queue. callsToWrite.size()=" + callsToWrite.size());
       }
 
-      XTraceUtil.getDebugLogger().log("Enqueue RPC for sending: "+call);
-      call.bag=Baggage.fork();
+    //  XTraceUtil.getDebugLogger().log("Enqueue RPC for sending: "+call);
+     // call.bag=Baggage.fork();
       callsToWrite.offer(call);
       BlockingRpcConnection.this.notifyAll();
     }
@@ -190,9 +187,9 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
           }
           Call call = callsToWrite.poll();
          try {
-           if(XTraceUtil.checkBaggageForNull(call.bag)) {
-             Baggage.start(call.bag);
-           }
+//           if(XTraceUtil.checkBaggageForNull(call.bag)) {
+//             Baggage.start(call.bag);
+//           }
            // TODO XTRACE discarding not needed but nice
            if (call.isDone()) {
              continue;
@@ -209,7 +206,7 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
              closeConn(e);
            }
          }finally {
-           Baggage.discard();
+//           Baggage.discard();
          }
         }
       }
@@ -671,7 +668,7 @@ class BlockingRpcConnection extends RpcConnection implements Runnable {
       ResponseHeader responseHeader = ResponseHeader.parseDelimitedFrom(in);
 
       if (XTraceUtil.checkBaggageForNull(responseHeader.getTraceBaggage())) {
-        Baggage.join(responseHeader.getTraceBaggage().toByteArray());
+//        Baggage.join(responseHeader.getTraceBaggage().toByteArray());
       }
       XTraceUtil.getDebugLogger().log("RPC response: "+responseHeader.toString());
       int id = responseHeader.getCallId();

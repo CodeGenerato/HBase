@@ -80,13 +80,6 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.ConnectionHea
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.xtrace.XTraceSettings;
-import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
-import edu.brown.cs.systems.xtrace.logging.XTraceLoggingLevel;
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
-
 
 /**
  * An RPC server that hosts protobuf described Services.

@@ -898,45 +898,7 @@
     </pluginManagement>
     <plugins>
 
-           <plugin>
-     <groupId>org.codehaus.mojo</groupId>
-     <artifactId>aspectj-maven-plugin</artifactId>
-     <version>1.8</version>
-     <configuration>
-       <complianceLevel>1.8</complianceLevel>
-       <source>1.8</source>
-       <target>1.8</target>
-       <showWeaveInfo>true</showWeaveInfo>
-       <verbose>true</verbose>
-       <encoding>UTF-8</encoding>
-       <Xjoinpoints>synchronization</Xjoinpoints>
-       <Xlint>
-         unmatchedSuperTypeInCall=ignore,adviceDidNotMatch=ignore,typeNotExposedToWeaver=ignore,uncheckedAdviceConversion=ignore,invalidAbsoluteTypeName=ignore
-       </Xlint>
-       <aspectLibraries>
-         <aspectLibrary>
-           <groupId>edu.brown.cs.systems</groupId>
-           <artifactId>tracingplane-aspects</artifactId>
-         </aspectLibrary>
-         <aspectLibrary>
-           <groupId>edu.brown.cs.systems</groupId>
-           <artifactId>xtrace-aspects</artifactId>
 
-         </aspectLibrary>
-	<aspectLibrary>
-              <groupId>org.apache.hbase</groupId>
-              <artifactId>xtrace-aspects</artifactId>
-            </aspectLibrary>
-       </aspectLibraries>
-     </configuration>
-     <executions>
-       <execution>
-         <goals>
-           <goal>compile</goal>
-         </goals>
-            </execution>
-          </executions>
-        </plugin>
 
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -2230,47 +2192,6 @@
       <artifactId>tracker</artifactId>
       <version>0.1-SNAPSHOT</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>xtrace-aspects</artifactId>
-      <version>2.1.7</version>
-    </dependency>
-    <dependency>
-        <groupId>org.aspectj</groupId>
-        <artifactId>aspectjrt</artifactId>
-        <version>1.8.7</version>
-      </dependency>
-      <dependency>
-        <groupId>edu.brown.cs.systems</groupId>
-        <artifactId>tracingplane-common</artifactId>
-        <version>${tracingplane.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>edu.brown.cs.systems</groupId>
-        <artifactId>xtrace-common</artifactId>
-        <version>${tracingplane.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>edu.brown.cs.systems</groupId>
-        <artifactId>xtrace-client</artifactId>
-        <version>${tracingplane.version}</version>
-      </dependency>
-    <dependency>
-      <groupId>edu.brown.cs.systems</groupId>
-      <artifactId>tracingplane-client</artifactId>
-      <version>${tracingplane.version}</version>
-    </dependency>
-     <dependency>
-        <groupId>edu.brown.cs.systems</groupId>
-        <artifactId>tracingplane-aspects</artifactId>
-        <version>${tracingplane.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>edu.brown.cs.systems</groupId>
-        <artifactId>xtrace-aspects</artifactId>
-        <version>${tracingplane.version}</version>
-       </dependency>
-
   </dependencies>
 
   <!--

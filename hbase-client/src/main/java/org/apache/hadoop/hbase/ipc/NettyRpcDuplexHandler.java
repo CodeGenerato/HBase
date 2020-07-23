@@ -50,12 +50,6 @@ import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos.ResponseHeade
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.ipc.RemoteException;
 
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
-
-import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
-
 /**
  * The netty rpc handler.
  * @since 2.0.0
@@ -87,8 +81,8 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
   private void writeRequest(ChannelHandlerContext ctx, Call call, ChannelPromise promise)
       throws IOException {
     try {
-      XTraceUtil.checkBaggageForNull(call.bag);
-      Baggage.join(call.bag);
+      //XTraceUtil.checkBaggageForNull(call.bag);
+     // Baggage.join(call.bag);
 
       id2Call.put(call.id, call);
       ByteBuf cellBlock = cellBlockBuilder.buildCellBlock(codec, compressor, call.cells, ctx.alloc());
@@ -127,7 +121,7 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
       }
     }
     finally{
-      Baggage.discard();
+//      Baggage.discard();
     }
   }
 
@@ -150,7 +144,7 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
       // TODO XTRACE better solution for to byte and from byte?
 
       if (XTraceUtil.checkBaggageForNull(responseHeader.getTraceBaggage())) {
-        Baggage.join(responseHeader.getTraceBaggage().toByteArray());
+        //Baggage.join(responseHeader.getTraceBaggage().toByteArray());
       }
 
       int id = responseHeader.getCallId();
@@ -219,7 +213,7 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
       call.setResponse(value, cellBlockScanner);
     }finally {
       AccessTracker.stopTask();
-      Baggage.discard();
+//      Baggage.discard();
     }
   }
 

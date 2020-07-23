@@ -44,9 +44,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
-import edu.brown.cs.systems.baggage.DetachedBaggage;
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.xtrace.XTrace;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -371,13 +369,13 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
 
   private int finishSyncLowerThanTxid(long txid, boolean addSyncTrace) {
     int finished = 0;
-    DetachedBaggage bag = Baggage.stop();
+//    DetachedBaggage bag = Baggage.stop();
     for (Iterator<SyncFuture> iter = syncFutures.iterator(); iter.hasNext();) {
       SyncFuture sync = iter.next();
 
-      if(XTraceUtil.checkBaggageForNull(sync.bag)) {
-        Baggage.start(sync.bag);
-      }
+//      if(XTraceUtil.checkBaggageForNull(sync.bag)) {
+//        Baggage.start(sync.bag);
+//      }
       if (sync.getTxid() <= txid) {
         sync.done(txid, null);
         iter.remove();
@@ -389,7 +387,7 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
         break;
       }
     }
-    Baggage.start(bag);
+//    Baggage.start(bag);
     return finished;
   }
 
@@ -400,19 +398,19 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
       if (toWriteAppends.isEmpty()) {
         // Also no appends that wait to be written out, then just finished all pending syncs.
         long maxSyncTxid = highestSyncedTxid.get();
-        DetachedBaggage bag =Baggage.stop();
+//        DetachedBaggage bag =Baggage.stop();
         for (SyncFuture sync : syncFutures) {
 
-          if(XTraceUtil.checkBaggageForNull(sync.bag)) {
-            Baggage.start(sync.bag);
-          }
+//          if(XTraceUtil.checkBaggageForNull(sync.bag)) {
+//            Baggage.start(sync.bag);
+//          }
           maxSyncTxid = Math.max(maxSyncTxid, sync.getTxid());
           sync.done(maxSyncTxid, null);
           if (addSyncTrace) {
             addTimeAnnotation(sync, "writer synced");
           }
         }
-        Baggage.start(bag);
+//        Baggage.start(bag);
         highestSyncedTxid.set(maxSyncTxid);
         int finished = syncFutures.size();
         syncFutures.clear();
@@ -443,13 +441,13 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
     // finish some.
     finishSync(false);
     long newHighestProcessedAppendTxid = -1L;
-    DetachedBaggage bag= Baggage.stop();
+//    DetachedBaggage bag= Baggage.stop();
     for (Iterator<FSWALEntry> iter = toWriteAppends.iterator(); iter.hasNext();) {
       FSWALEntry entry = iter.next();
 
-      if(XTraceUtil.checkBaggageForNull(entry.bag)) {
-        Baggage.start(entry.bag);
-      }
+//      if(XTraceUtil.checkBaggageForNull(entry.bag)) {
+//        Baggage.start(entry.bag);
+//      }
       boolean appended;
       try {
         appended = append(writer, entry);
@@ -472,7 +470,7 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
       // have to discard because next part cannot be associated with one particular append
 
     }
-    Baggage.start(bag);
+//    Baggage.start(bag);
 
     // if we have a newer transaction id, update it.
     // otherwise, use the previous transaction id.
@@ -503,25 +501,25 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
     // whether to issue a sync in the caller method.
   }
 
-  private volatile DetachedBaggage bag = null;
+//  private volatile DetachedBaggage bag = null;
   private void consume() {
     // TODO XTRACE, we cannot trace per request here
     // because many requests are flushed together, we can only track the start and end event but not the actual file write
     // a file write cannot be associated with one request
     consumeLock.lock();
     // XTRACE this is a hack to keep everything on one trace
-    if(bag==null) {
-      XTrace.startTask(true);
-      XTraceUtil.getDebugLogger().tag("Batched WAL OP", "Batched WAL OP");
-      bag = Baggage.fork();
+//    if(bag==null) {
+//      XTrace.startTask(true);
+//      XTraceUtil.getDebugLogger().tag("Batched WAL OP", "Batched WAL OP");
+     // bag = Baggage.fork();
 //      AccessTracker.enableAutoTaskInheritance();
 //      AccessTracker.enableEventLogging();
 //      AccessTracker.resetTracking();
 //      AccessTracker.startTask();
-    }
-    else{
-      Baggage.join(bag);
-    }
+    //}
+    //else{
+//      Baggage.join(bag);
+    //}
     XTraceUtil.getDebugLogger().log("consume start");
 
     try {

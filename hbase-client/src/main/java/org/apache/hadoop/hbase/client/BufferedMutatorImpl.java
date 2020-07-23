@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.ipc.RpcControllerFactory;
@@ -305,9 +304,7 @@ public class BufferedMutatorImpl implements BufferedMutator {
           // It means someone has gotten the ticker to run the flush.
           break;
         }
-        XTrace.startTask(true);
-        XTraceUtil.getDebugLogger().tag("Buffered Mutations","Buffered Mutations");
-        XTraceUtil.getDebugLogger().log("submit mutations");
+
         asf = ap.submit(createTask(access));
       }
       // DON'T do the wait in the try-with-resources. Otherwise, the undealt mutations won't

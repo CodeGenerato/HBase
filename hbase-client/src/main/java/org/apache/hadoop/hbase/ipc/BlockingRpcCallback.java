@@ -28,8 +28,6 @@ import java.io.InterruptedIOException;
 
 import org.apache.yetus.audience.InterfaceAudience;
 
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
 
 /**
  * Simple {@link RpcCallback} implementation providing a
@@ -41,7 +39,7 @@ import edu.brown.cs.systems.baggage.DetachedBaggage;
 public class BlockingRpcCallback<R> implements RpcCallback<R> {
   private R result;
   private boolean resultSet = false;
-  private volatile DetachedBaggage bag = null;
+//  private volatile DetachedBaggage bag = null;
   private volatile Task task = null;
   /**
    * Called on completion of the RPC call with the response object, or {@code null} in the case of
@@ -53,7 +51,7 @@ public class BlockingRpcCallback<R> implements RpcCallback<R> {
     synchronized (this) {
       result = parameter;
       resultSet = true;
-      bag = Baggage.fork();
+      //bag = Baggage.fork();
       task = AccessTracker.fork();
       this.notifyAll();
     }
@@ -75,7 +73,7 @@ public class BlockingRpcCallback<R> implements RpcCallback<R> {
         throw exception;
       }
     }
-    Baggage.join(bag);
+//    Baggage.join(bag);
     if(task!=null){
       try {
         AccessTracker.tryJoin(task);

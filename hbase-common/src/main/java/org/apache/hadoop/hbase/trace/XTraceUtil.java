@@ -1,47 +1,36 @@
 package org.apache.hadoop.hbase.trace;
 
-import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.xtrace.logging.NullLogger;
-import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
 import org.apache.yetus.audience.InterfaceAudience;
 
 @InterfaceAudience.Private
 public class XTraceUtil {
 
-    public static boolean checkBaggageForNull(Object baggage){
-        if(baggage == null){
+    public static boolean checkBaggageForNull(Object baggage) {
+        if (baggage == null) {
             onBaggageIsNull();
             return false;
         }
         return true;
     }
 
-    private static void onBaggageIsNull(){
-        XTrace.startTask(true);
-        XTraceUtil.getDebugLogger().tag("NULL BAGGAGE","NULL BAGGAGE");
-        XTraceUtil.getDebugLogger().log("NULL BAGGAGE HERE");
+    private static void onBaggageIsNull() {
+//        XTrace.startTask(true);
+//        XTraceUtil.getDebugLogger().tag("NULL BAGGAGE","NULL BAGGAGE");
+//        XTraceUtil.getDebugLogger().log("NULL BAGGAGE HERE");
 
     }
 
     private static final boolean TRACE_DEBUG_LOGGING = true;
-    private static XTraceLogger d_logger;
+//    private static XTraceLogger d_logger;
 
-    public synchronized static XTraceLogger getDebugLogger() {
-        if (d_logger == null) {
-            if (TRACE_DEBUG_LOGGING) {
-                d_logger = XTrace.getLogger("TraceDebug");
-            }else {
-                d_logger = new NullLogger();
-            }
-        }
-        return d_logger;
+    public synchronized static DummyLogger getDebugLogger() {
+        return new DummyLogger();
     }
 
-    private static XTraceLogger c_logger;
-    public synchronized  static XTraceLogger getContentLogger(){
-        if(c_logger == null) {
-            c_logger = XTraceUtil.getDebugLogger();
-        }
-        return c_logger;
+    public synchronized static DummyLogger getContentLogger() {
+        return new DummyLogger();
+
     }
+
 }
+

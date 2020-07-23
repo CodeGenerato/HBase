@@ -23,9 +23,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.hadoop.hbase.exceptions.TimeoutIOException;
 import org.apache.yetus.audience.InterfaceAudience;
 
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
-
 /**
  * A Future on a filesystem sync call. It given to a client or 'Handler' for it to wait on till the
  * sync completes.
@@ -48,7 +45,7 @@ import edu.brown.cs.systems.baggage.DetachedBaggage;
 @InterfaceAudience.Private
 class SyncFuture {
 
-  public volatile DetachedBaggage bag = null;
+//  public volatile DetachedBaggage bag = null;
   // Implementation notes: I tried using a cyclicbarrier in here for handler and sync threads
   // to coordinate on but it did not give any obvious advantage and some issues with order in which
   // events happen.
@@ -93,7 +90,7 @@ class SyncFuture {
     this.doneTxid = NOT_DONE;
     this.txid = txid;
     this.throwable = null;
-    this.bag = null;
+    //this.bag = null;
     return this;
   }
 
@@ -133,7 +130,7 @@ class SyncFuture {
             new IllegalStateException("done txid=" + txid + ", my txid=" + this.txid);
       }
     }
-    bag = Baggage.fork();
+   // bag = Baggage.fork();
     this.doneTxid = txid;
     // Wake up waiting threads.
     notify();
@@ -157,7 +154,7 @@ class SyncFuture {
     }
     // TODO XTRACE if we start the bag here, sometimes traces get cut, so the tracked bag
     // is sometimes not correct (belongs to the wrong trace
-    Baggage.join(bag);
+//    Baggage.join(bag);
     if (this.throwable != null) {
       throw new ExecutionException(this.throwable);
     }

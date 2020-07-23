@@ -34,10 +34,6 @@ import org.apache.yetus.audience.InterfaceAudience;
 import org.apache.hbase.thirdparty.com.google.common.base.Preconditions;
 import org.apache.hbase.thirdparty.com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
-
 
 /**
  * An {@link AsyncFSOutput} wraps a {@link FSDataOutputStream}.
@@ -110,9 +106,9 @@ public class WrapperAsyncFSOutput implements AsyncFSOutput {
     CompletableFuture<Long> future = new CompletableFuture<>();
     ByteArrayOutputStream buffer = this.buffer;
     this.buffer = new ByteArrayOutputStream();
-    DetachedBaggage bag = Baggage.fork();
+   // DetachedBaggage bag = Baggage.fork();
     executor.execute(() ->{
-    Baggage.start(bag);
+    //Baggage.start(bag);
     flush0(future, buffer, sync);
     });
     return future;

@@ -47,7 +47,7 @@ import org.apache.hbase.thirdparty.io.netty.channel.EventLoopGroup;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.WALProtos.WALHeader;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.WALProtos.WALTrailer;
 
-import edu.brown.cs.systems.xtrace.XTrace;
+
 
 /**
  * AsyncWriter for protobuf-based WAL.

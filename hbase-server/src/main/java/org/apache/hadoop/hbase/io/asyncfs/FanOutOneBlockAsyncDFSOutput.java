@@ -75,8 +75,7 @@ import org.apache.hbase.thirdparty.io.netty.handler.codec.protobuf.ProtobufVarin
 import org.apache.hbase.thirdparty.io.netty.handler.timeout.IdleStateEvent;
 import org.apache.hbase.thirdparty.io.netty.handler.timeout.IdleStateHandler;
 
-import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
+
 
 /**
  * An asynchronous HDFS output stream implementation which fans out data to datanode and only

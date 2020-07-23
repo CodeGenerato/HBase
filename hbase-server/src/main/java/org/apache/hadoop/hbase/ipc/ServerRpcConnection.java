@@ -78,11 +78,8 @@ import org.apache.hadoop.security.authorize.ProxyUsers;
 import org.apache.hadoop.security.token.SecretManager.InvalidToken;
 import org.apache.hadoop.security.token.TokenIdentifier;
 
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
 
-import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
+
 
 /** Reads calls from a connection and queues them for handling. */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings(
@@ -728,7 +725,7 @@ abstract class ServerRpcConnection implements Closeable {
   protected final RpcResponse getErrorResponse(String msg, Exception e) throws IOException {
     ResponseHeader.Builder headerBuilder = ResponseHeader.newBuilder().setCallId(-1);
 
-    headerBuilder.setTraceBaggage(ByteString.copyFrom(Baggage.fork().toByteArray()));
+   // headerBuilder.setTraceBaggage(ByteString.copyFrom(Baggage.fork().toByteArray()));
 
     ServerCall.setExceptionResponse(e, msg, headerBuilder);
     ByteBuffer headerBuf =

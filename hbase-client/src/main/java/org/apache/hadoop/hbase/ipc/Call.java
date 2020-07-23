@@ -34,16 +34,13 @@ import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.htrace.core.Span;
 import org.apache.htrace.core.Tracer;
 
-import edu.brown.cs.systems.baggage.Baggage;
-import edu.brown.cs.systems.baggage.DetachedBaggage;
-
 /** A call waiting for a value. */
 @InterfaceAudience.Private
 class Call {
   final int id; // call id
   final Message param; // rpc request method param object
 
-  public volatile DetachedBaggage bag = null;
+//  public volatile DetachedBaggage bag = null;
   public volatile Task task = null;
 
   /**

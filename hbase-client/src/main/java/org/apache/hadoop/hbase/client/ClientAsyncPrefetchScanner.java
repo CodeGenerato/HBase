@@ -17,7 +17,6 @@
  */
 package org.apache.hadoop.hbase.client;
 
-import edu.brown.cs.systems.xtrace.XTrace;
 import org.apache.hbase.thirdparty.com.google.common.annotations.VisibleForTesting;
 
 import static org.apache.hadoop.hbase.client.ConnectionUtils.calcEstimatedSize;

@@ -48,7 +48,7 @@ import org.apache.hadoop.io.IOUtils;
 import org.apache.hbase.thirdparty.com.google.protobuf.ByteString;
 import org.apache.hbase.thirdparty.com.google.protobuf.UnsafeByteOperations;
 
-import edu.brown.cs.systems.xtrace.XTrace;
+
 
 
 /**

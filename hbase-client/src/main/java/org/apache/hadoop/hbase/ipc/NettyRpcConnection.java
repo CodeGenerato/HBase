@@ -66,10 +66,6 @@ import org.apache.hadoop.hbase.security.SaslChallengeDecoder;
 import org.apache.hadoop.hbase.util.Threads;
 import org.apache.hadoop.security.UserGroupInformation;
 
-import edu.brown.cs.systems.xtrace.XTrace;
-import edu.brown.cs.systems.xtrace.logging.XTraceLogger;
-
-import edu.brown.cs.systems.baggage.Baggage;
 
 
 /**
@@ -337,7 +333,7 @@ class NettyRpcConnection extends RpcConnection {
           scheduleTimeoutTask(call);
           final Channel ch = channel;
           XTraceUtil.getDebugLogger().log("send RPC");
-          call.bag=Baggage.fork();
+         // call.bag=Baggage.fork();
 
           Task t = AccessTracker.fork();
           // We must move the whole writeAndFlush call inside event loop otherwise there will be a
