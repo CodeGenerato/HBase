@@ -19,12 +19,16 @@ package org.apache.hadoop.hbase.ipc;
 
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import boundarydetection.tracker.AccessTracker;
+import boundarydetection.tracker.tasks.Task;
+import boundarydetection.tracker.tasks.Tasks;
 import org.apache.hadoop.hbase.CallDroppedException;
 import org.apache.hadoop.hbase.CellScanner;
 import org.apache.hadoop.hbase.HBaseInterfaceAudience;
+import org.apache.hadoop.hbase.master.SplitLogManager;
 import org.apache.hadoop.hbase.shaded.protobuf.generated.RPCProtos;
 import org.apache.hadoop.hbase.trace.TraceUtil;
 import org.apache.hadoop.hbase.trace.XTraceUtil;
@@ -103,18 +107,19 @@ public class CallRunner {
 
       RPCProtos.RequestHeader rq = call.getHeader();
 
-      ByteString bs = rq.getTraceBaggage();
-//      if(XTraceUtil.checkBaggageForNull(bs)) {
-//        Baggage.start(bs.toByteArray());
-//      }
-
+      if (rq.hasTraceBaggage()) {
+        ByteString bs = rq.getTraceBaggage();
+        AccessTracker.join(AccessTracker.deserialize(bs.toString(StandardCharsets.UTF_16)));
+        AccessTracker.getTask().setTag("CallRunner_" + rq.getMethodName());
+      }
       // ReportRegionStateTransition
       // IsMasterRunning
       // getProcedureResult
-        if (rq.hasMethodName() && rq.getMethodName().equals("CreateTable")) {
-          AccessTracker.resetTracking();
-          AccessTracker.startTask("CallRunner_"+rq.getMethodName());
-        }
+//        if (rq.hasMethodName() && rq.getMethodName().equals("CreateTable")) {
+//          AccessTracker.resetTracking();
+//          AccessTracker.startTask("CallRunner_"+rq.getMethodName());
+//        }
+
 
       if (call.disconnectSince() >= 0) {
         if (RpcServer.LOG.isDebugEnabled()) {
@@ -213,8 +218,7 @@ public class CallRunner {
         this.rpcServer.addCallSize(call.getSize() * -1);
       }
       cleanup();
-
-      AccessTracker.stopTask();
+      AccessTracker.discard();
 //      Baggage.discard();
     }
   }

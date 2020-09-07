@@ -127,7 +127,7 @@ public abstract class Procedure<TEnvironment> implements Comparable<Procedure<TE
 
   // XTRACE
 //  public volatile DetachedBaggage bag = null;
-  public volatile Task t = null;
+  public volatile Task trackerTask = null;
 
   // Unchanged after initialization
   private NonceKey nonceKey = null;

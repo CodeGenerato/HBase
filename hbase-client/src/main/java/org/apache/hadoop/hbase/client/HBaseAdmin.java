@@ -623,10 +623,13 @@ public class HBaseAdmin implements Admin {
   @Override
   public void createTable(final TableDescriptor desc, byte [][] splitKeys)
       throws IOException {
+    try {
       AccessTracker.resetTracking();
       AccessTracker.startTask("CreateTable_ClientStart");
       get(createTableAsync(desc, splitKeys), syncWaitTimeout, TimeUnit.MILLISECONDS);
+    } finally {
       AccessTracker.stopTask();
+    }
   }
 
   @Override

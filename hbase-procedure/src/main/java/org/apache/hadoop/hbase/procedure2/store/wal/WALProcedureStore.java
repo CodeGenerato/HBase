@@ -734,6 +734,7 @@ public class WALProcedureStore extends ProcedureStoreBase {
         }
       }
 
+      slot.trackerTask = AccessTracker.fork();
       final long pushSyncId = syncId.get();
       updateStoreTracker(type, procId, subProcIds);
       slots[slotIndex++] = slot;
@@ -808,10 +809,6 @@ public class WALProcedureStore extends ProcedureStoreBase {
     try {
       while (isRunning()) {
         try {
-//          AccessTracker.enableAutoTaskInheritance();
-//          AccessTracker.enableEventLogging();
-//          AccessTracker.resetTracking();
-//          AccessTracker.startTask();
           // Wait until new data is available
           if (slotIndex == 0) {
             if (!loading.get()) {
@@ -928,17 +925,25 @@ public class WALProcedureStore extends ProcedureStoreBase {
     long totalSynced = 0;
     for (int i = 0; i < count; ++i) {
       final ByteSlot data = slots[offset + i];
+      if (data.trackerTask != null) {
+        boolean hasTask = AccessTracker.hasTask(); // join should return a boolean saying if task was already present
+        AccessTracker.join(data.trackerTask);
+        AccessTracker.getTask().setTag("WALProcedureStoreFlush");
+     }
       data.writeTo(stream);
       totalSynced += data.size();
     }
 
     syncStream(stream);
+    //NO AccessTracker.fork(); needed for tracking because we join back to the thread that is waiting and we already covered.
+    //also not needed in a span like context.
+    // For event based store the slots that are written and put context there. On waiting thread: for all slots that were pushed, join the new context. Or just start a new trace here.
     sendPostSyncSignal();
-
     if (LOG.isTraceEnabled()) {
       LOG.trace("Sync slots=" + count + '/' + syncMaxSlot +
                 ", flushed=" + StringUtils.humanSize(totalSynced));
     }
+    AccessTracker.discard();
     return totalSynced;
   }
 

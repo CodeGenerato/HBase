@@ -233,6 +233,7 @@ public class RecoverableZooKeeper {
       while (true) {
         try {
           long startTime = EnvironmentEdgeManager.currentTime();
+          //AccessTracker.fork() to propagate context to zookeeper, we stop at this point (service boundary). Same for other Zookeeper stubs.
           Stat nodeStat = checkZk().exists(path, watch);
           return nodeStat;
         } catch (KeeperException e) {

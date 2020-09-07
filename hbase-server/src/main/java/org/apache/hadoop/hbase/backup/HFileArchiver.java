@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import boundarydetection.tracker.AccessTracker;
+import boundarydetection.tracker.tasks.Task;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -188,19 +189,24 @@ public class HFileArchiver {
     List<Path> regionDirList) throws IOException {
     List<Future<Void>> futures = new ArrayList<>(regionDirList.size());
     for (Path regionDir: regionDirList) {
+      Task trackerTask = AccessTracker.fork();
+      // This is the only use of the threadpool. No general instrumentation required
       Future<Void> future = getArchiveExecutor(conf).submit(() -> {
-//        AccessTracker.enableAutoTaskInheritance();
-//        AccessTracker.enableEventLogging();
-//        AccessTracker.resetTracking();
-//        AccessTracker.startTask();
+        if (trackerTask != null) {
+          AccessTracker.join(trackerTask);
+          AccessTracker.getTask().setTag("ArchiveRegions");
+        }
+
         archiveRegion(fs, rootDir, tableDir, regionDir);
-//        AccessTracker.stopTask();
+
+        AccessTracker.discard();
         return null;
       });
       futures.add(future);
     }
     try {
       for (Future<Void> future: futures) {
+        // TODO join back, included in general executor/future solution
         future.get();
       }
     } catch (InterruptedException e) {

@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.Map;
+
+import boundarydetection.tracker.AccessTracker;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.procedure2.store.ProcedureStore;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
@@ -105,6 +107,7 @@ class CompletedProcedureCleaner<TEnvironment> extends ProcedureInMemoryChore<TEn
       IdLock.Entry lockEntry;
       try {
         lockEntry = procExecutionLock.getLockEntry(proc.getProcId());
+        // AccessTracker.join(proc.trackerTaskX); We could associate the cleanup task with the procedure and the corresponding request!
       } catch (IOException e) {
         // can only happen if interrupted, so not a big deal to propagate it
         throw new UncheckedIOException(e);
@@ -128,6 +131,7 @@ class CompletedProcedureCleaner<TEnvironment> extends ProcedureInMemoryChore<TEn
           LOG.trace("Evict completed {}", proc);
         }
       } finally {
+        //AccessTracker.discard();
         procExecutionLock.releaseLockEntry(lockEntry);
       }
     }

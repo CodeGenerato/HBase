@@ -793,6 +793,7 @@ public class ProcedureExecutor<TEnvironment> {
   public void addChore(ProcedureInMemoryChore<TEnvironment> chore) {
     chore.setState(ProcedureState.WAITING_TIMEOUT);
     timeoutExecutor.add(chore);
+    // AccessTracker.startTask, for each periodic task possible
   }
 
   /**
@@ -2035,10 +2036,9 @@ public class ProcedureExecutor<TEnvironment> {
           if (proc == null) {
             continue;
           }
-          if(proc.t!=null) {
-            AccessTracker.join(proc.t);
-            AccessTracker.getTask().setTag("ProcedureExecuter_"+proc.getProcName());
-            AccessTracker.getTask().setWriteCapability(true);
+          if(proc.trackerTask !=null) {
+            AccessTracker.join(proc.trackerTask);
+            AccessTracker.getTask().setTag("ProcedureExecutor");                    //_"+proc.getProcName());
           }
 
 //          if(XTraceUtil.checkBaggageForNull(proc.bag)) {
@@ -2060,6 +2060,8 @@ public class ProcedureExecutor<TEnvironment> {
             LOG.info("ASSERT pid=" + proc.getProcId(), e);
             throw e;
           } finally {
+            proc.trackerTask = AccessTracker.fork();
+            AccessTracker.discard();
             procExecutionLock.releaseLockEntry(lockEntry);
             activeCount = activeExecutorCount.decrementAndGet();
             runningCount = store.setRunningProcedureCount(activeCount);
@@ -2068,9 +2070,6 @@ public class ProcedureExecutor<TEnvironment> {
             this.activeProcedure = null;
             lastUpdate = EnvironmentEdgeManager.currentTime();
             executionStartTime.set(Long.MAX_VALUE);
-
-            AccessTracker.discard();
-//            Baggage.discard();
           }
         }
       } catch (Throwable t) {

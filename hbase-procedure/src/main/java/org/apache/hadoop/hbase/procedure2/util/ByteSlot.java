@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 
+import boundarydetection.tracker.tasks.Task;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.apache.yetus.audience.InterfaceStability;
 
@@ -51,6 +52,8 @@ public class ByteSlot extends OutputStream {
   private byte[] buf;
   private int head;
   private int size;
+
+  public Task trackerTask;
 
   public void reset() {
     if (buf != null && buf.length > RESET_THRESHOLD) {

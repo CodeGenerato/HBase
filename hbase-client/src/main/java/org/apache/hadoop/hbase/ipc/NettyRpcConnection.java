@@ -333,9 +333,9 @@ class NettyRpcConnection extends RpcConnection {
           scheduleTimeoutTask(call);
           final Channel ch = channel;
           XTraceUtil.getDebugLogger().log("send RPC");
-         // call.bag=Baggage.fork();
+          // call.bag=Baggage.fork();
 
-          Task t = AccessTracker.fork();
+          Task trackerTask = AccessTracker.fork();
           // We must move the whole writeAndFlush call inside event loop otherwise there will be a
           // race condition.
           // In netty's DefaultChannelPipeline, it will find the first outbound handler in the
@@ -355,13 +355,12 @@ class NettyRpcConnection extends RpcConnection {
               @Override
               public void run() {
                 try {
-                  if (t != null) {
-                    AccessTracker.join(t);
-                    AccessTracker.getTask().setTag("ClientPassToNetty_" + call.md.getName());
-                    AccessTracker.getTask().setWriteCapability(true);
+                  if (trackerTask != null) {
+                    AccessTracker.join(trackerTask);
+                    AccessTracker.getTask().setTag("ClientPassToNetty"); //_" + call.md.getName());
                   }
                   write(ch, call);
-                }finally {
+                } finally {
                   AccessTracker.discard();
                 }
 

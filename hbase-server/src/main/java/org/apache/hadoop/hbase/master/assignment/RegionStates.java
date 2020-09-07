@@ -36,6 +36,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import boundarydetection.tracker.tasks.Task;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.ServerName;
@@ -103,6 +105,8 @@ public class RegionStates {
   // so for now. Odd is that elsewhere in this RegionStates, we synchronize on
   // the RegionStateNode instance. TODO.
   public static class RegionStateNode implements Comparable<RegionStateNode> {
+    public Task trackerTask;
+
     private final RegionInfo regionInfo;
     private final ProcedureEvent<?> event;
 

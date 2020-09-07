@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+
+import boundarydetection.tracker.AccessTracker;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseIOException;
 import org.apache.hadoop.hbase.HConstants;
@@ -71,6 +73,7 @@ import org.apache.hadoop.hbase.procedure2.ProcedureExecutor;
 import org.apache.hadoop.hbase.procedure2.ProcedureInMemoryChore;
 import org.apache.hadoop.hbase.procedure2.util.StringUtils;
 import org.apache.hadoop.hbase.regionserver.SequenceId;
+import org.apache.hadoop.hbase.security.access.AccessChecker;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.hadoop.hbase.util.HasThread;
@@ -1594,6 +1597,7 @@ public class AssignmentManager implements ServerListener {
     // TODO: quick-start for meta and the other sys-tables?
     assignQueueLock.lock();
     try {
+      regionNode.trackerTask = AccessTracker.fork();
       pendingAssignQueue.add(regionNode);
       if (regionNode.isSystemTable() ||
           pendingAssignQueue.size() == 1 ||
@@ -1659,6 +1663,13 @@ public class AssignmentManager implements ServerListener {
       assignQueueFullCond.await(assignDispatchWaitMillis, TimeUnit.MILLISECONDS);
       regions = new HashMap<RegionInfo, RegionStateNode>(pendingAssignQueue.size());
       for (RegionStateNode regionNode: pendingAssignQueue) {
+        if (regionNode.trackerTask != null) {
+          boolean hasTask = AccessTracker.hasTask(); // join should return a boolean saying if task was already present
+          AccessTracker.join(regionNode.trackerTask);
+          if (!hasTask) {
+            AccessTracker.getTask().setTag("ProcessAssignments");
+          }
+        }
         regions.put(regionNode.getRegionInfo(), regionNode);
       }
       pendingAssignQueue.clear();
@@ -1672,65 +1683,69 @@ public class AssignmentManager implements ServerListener {
   }
 
   private void processAssignQueue() {
-    final HashMap<RegionInfo, RegionStateNode> regions = waitOnAssignQueue();
-    if (regions == null || regions.size() == 0 || !isRunning()) {
-      return;
-    }
-
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("PROCESS ASSIGN QUEUE regionCount=" + regions.size());
-    }
-
-    // TODO: Optimize balancer. pass a RegionPlan?
-    final HashMap<RegionInfo, ServerName> retainMap = new HashMap<>();
-    final List<RegionInfo> userHRIs = new ArrayList<>(regions.size());
-    // Regions for system tables requiring reassignment
-    final List<RegionInfo> systemHRIs = new ArrayList<>();
-    for (RegionStateNode regionStateNode: regions.values()) {
-      boolean sysTable = regionStateNode.isSystemTable();
-      final List<RegionInfo> hris = sysTable? systemHRIs: userHRIs;
-      if (regionStateNode.getRegionLocation() != null) {
-        retainMap.put(regionStateNode.getRegionInfo(), regionStateNode.getRegionLocation());
-      } else {
-        hris.add(regionStateNode.getRegionInfo());
-      }
-    }
-
-    // TODO: connect with the listener to invalidate the cache
-
-    // TODO use events
-    List<ServerName> servers = master.getServerManager().createDestinationServersList();
-    for (int i = 0; servers.size() < 1; ++i) {
-      // Report every fourth time around this loop; try not to flood log.
-      if (i % 4 == 0) {
-        LOG.warn("No servers available; cannot place " + regions.size() + " unassigned regions.");
-      }
-
-      if (!isRunning()) {
-        LOG.debug("Stopped! Dropping assign of " + regions.size() + " queued regions.");
+    try {
+      final HashMap<RegionInfo, RegionStateNode> regions = waitOnAssignQueue();
+      if (regions == null || regions.size() == 0 || !isRunning()) {
         return;
       }
-      Threads.sleep(250);
-      servers = master.getServerManager().createDestinationServersList();
-    }
 
-    if (!systemHRIs.isEmpty()) {
-      // System table regions requiring reassignment are present, get region servers
-      // not available for system table regions
-      final List<ServerName> excludeServers = getExcludedServersForSystemTable();
-      List<ServerName> serversForSysTables = servers.stream()
-          .filter(s -> !excludeServers.contains(s)).collect(Collectors.toList());
-      if (serversForSysTables.isEmpty()) {
-        LOG.warn("Filtering old server versions and the excluded produced an empty set; " +
-            "instead considering all candidate servers!");
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("PROCESS ASSIGN QUEUE regionCount=" + regions.size());
       }
-      LOG.debug("Processing assignQueue; systemServersCount=" + serversForSysTables.size() +
-          ", allServersCount=" + servers.size());
-      processAssignmentPlans(regions, null, systemHRIs,
-          serversForSysTables.isEmpty()? servers: serversForSysTables);
-    }
 
-    processAssignmentPlans(regions, retainMap, userHRIs, servers);
+      // TODO: Optimize balancer. pass a RegionPlan?
+      final HashMap<RegionInfo, ServerName> retainMap = new HashMap<>();
+      final List<RegionInfo> userHRIs = new ArrayList<>(regions.size());
+      // Regions for system tables requiring reassignment
+      final List<RegionInfo> systemHRIs = new ArrayList<>();
+      for (RegionStateNode regionStateNode : regions.values()) {
+        boolean sysTable = regionStateNode.isSystemTable();
+        final List<RegionInfo> hris = sysTable ? systemHRIs : userHRIs;
+        if (regionStateNode.getRegionLocation() != null) {
+          retainMap.put(regionStateNode.getRegionInfo(), regionStateNode.getRegionLocation());
+        } else {
+          hris.add(regionStateNode.getRegionInfo());
+        }
+      }
+
+      // TODO: connect with the listener to invalidate the cache
+
+      // TODO use events
+      List<ServerName> servers = master.getServerManager().createDestinationServersList();
+      for (int i = 0; servers.size() < 1; ++i) {
+        // Report every fourth time around this loop; try not to flood log.
+        if (i % 4 == 0) {
+          LOG.warn("No servers available; cannot place " + regions.size() + " unassigned regions.");
+        }
+
+        if (!isRunning()) {
+          LOG.debug("Stopped! Dropping assign of " + regions.size() + " queued regions.");
+          return;
+        }
+        Threads.sleep(250);
+        servers = master.getServerManager().createDestinationServersList();
+      }
+
+      if (!systemHRIs.isEmpty()) {
+        // System table regions requiring reassignment are present, get region servers
+        // not available for system table regions
+        final List<ServerName> excludeServers = getExcludedServersForSystemTable();
+        List<ServerName> serversForSysTables = servers.stream()
+                .filter(s -> !excludeServers.contains(s)).collect(Collectors.toList());
+        if (serversForSysTables.isEmpty()) {
+          LOG.warn("Filtering old server versions and the excluded produced an empty set; " +
+                  "instead considering all candidate servers!");
+        }
+        LOG.debug("Processing assignQueue; systemServersCount=" + serversForSysTables.size() +
+                ", allServersCount=" + servers.size());
+        processAssignmentPlans(regions, null, systemHRIs,
+                serversForSysTables.isEmpty() ? servers : serversForSysTables);
+      }
+
+      processAssignmentPlans(regions, retainMap, userHRIs, servers);
+    }finally {
+      AccessTracker.discard();
+    }
   }
 
   private void processAssignmentPlans(final HashMap<RegionInfo, RegionStateNode> regions,

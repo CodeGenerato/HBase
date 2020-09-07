@@ -145,6 +145,7 @@ public class ChoreService implements ChoreServicer {
    *         (typically occurs when a chore is scheduled during shutdown of service)
    */
   public synchronized boolean scheduleChore(ScheduledChore chore) {
+   //AccessTracker.start task for each periodic chore
     if (chore == null) {
       return false;
     }

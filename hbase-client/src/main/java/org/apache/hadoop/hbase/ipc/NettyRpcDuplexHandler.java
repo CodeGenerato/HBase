@@ -20,6 +20,7 @@ package org.apache.hadoop.hbase.ipc;
 import boundarydetection.tracker.AccessTracker;
 import org.apache.hadoop.hbase.exceptions.ConnectionClosedException;
 import org.apache.hadoop.hbase.trace.XTraceUtil;
+import org.apache.hbase.thirdparty.com.google.protobuf.ByteString;
 import org.apache.hbase.thirdparty.com.google.protobuf.Message;
 import org.apache.hbase.thirdparty.com.google.protobuf.Message.Builder;
 import org.apache.hbase.thirdparty.com.google.protobuf.TextFormat;
@@ -34,6 +35,7 @@ import org.apache.hbase.thirdparty.io.netty.handler.timeout.IdleStateEvent;
 import org.apache.hbase.thirdparty.io.netty.util.concurrent.PromiseCombiner;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -142,10 +144,15 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
 
     try {
       // TODO XTRACE better solution for to byte and from byte?
-
-      if (XTraceUtil.checkBaggageForNull(responseHeader.getTraceBaggage())) {
-        //Baggage.join(responseHeader.getTraceBaggage().toByteArray());
+      if(responseHeader.hasTraceBaggage()){
+      ByteString bs = responseHeader.getTraceBaggage();
+      AccessTracker.join(AccessTracker.deserialize(bs.toString(StandardCharsets.UTF_16)));
+      AccessTracker.getTask().setTag("RPCResponse");
       }
+
+//      if (XTraceUtil.checkBaggageForNull(responseHeader.getTraceBaggage())) {
+//        //Baggage.join(responseHeader.getTraceBaggage().toByteArray());
+//      }
 
       int id = responseHeader.getCallId();
       if (LOG.isTraceEnabled()) {
@@ -184,9 +191,9 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
 //      RESPONSE: getProcedureResult
 //
       //System.out.println("RESPONSE: "+call.md.getName());
-      if(call.md.getName().equals("CreateTable")){
-        AccessTracker.startTask("NettyClientResponse_"+call.md.getName());
-      }
+//      if(call.md.getName().equals("CreateTable")){
+//        AccessTracker.startTask("NettyClientResponse_"+call.md.getName());
+//      }
       if (remoteExc != null) {
         call.setException(remoteExc);
         return;
@@ -212,7 +219,7 @@ class NettyRpcDuplexHandler extends ChannelDuplexHandler {
       }
       call.setResponse(value, cellBlockScanner);
     }finally {
-      AccessTracker.stopTask();
+      AccessTracker.discard();
 //      Baggage.discard();
     }
   }

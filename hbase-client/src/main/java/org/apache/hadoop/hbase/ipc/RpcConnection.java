@@ -17,6 +17,9 @@
  */
 package org.apache.hadoop.hbase.ipc;
 
+import boundarydetection.tracker.AccessTracker;
+import boundarydetection.tracker.tasks.Task;
+import boundarydetection.tracker.tasks.Tasks;
 import org.apache.hbase.thirdparty.io.netty.util.HashedWheelTimer;
 import org.apache.hbase.thirdparty.io.netty.util.Timeout;
 import org.apache.hbase.thirdparty.io.netty.util.TimerTask;
@@ -191,18 +194,37 @@ abstract class RpcConnection {
   }
 
   protected void scheduleTimeoutTask(final Call call) {
+//    if (Tasks.hasTask()) call.timeout = 1000;
+
     if (call.timeout > 0) {
+      Task trackerTask = AccessTracker.fork();
       call.timeoutTask = timeoutTimer.newTimeout(new TimerTask() {
 
         @Override
         public void run(Timeout timeout) throws Exception {
-          call.setTimeout(new CallTimeoutException("Call id=" + call.id + ", waitTime="
-              + (EnvironmentEdgeManager.currentTime() - call.getStartTime()) + ", rpcTimeout="
-              + call.timeout));
-          callTimeout(call);
+          if (trackerTask != null) {
+            AccessTracker.join(trackerTask);
+            AccessTracker.getTask().setTag("OnRPCTimeout"); //_" + call.md.getName());
+          }
+          try {
+            call.setTimeout(new CallTimeoutException("Call id=" + call.id + ", waitTime="
+                    + (EnvironmentEdgeManager.currentTime() - call.getStartTime()) + ", rpcTimeout="
+                    + call.timeout));
+            callTimeout(call);
+          } finally {
+            AccessTracker.discard();
+          }
         }
       }, call.timeout, TimeUnit.MILLISECONDS);
     }
+
+//    if (Tasks.hasTask()) {
+//      try {
+//        Thread.sleep(5000);
+//      } catch (InterruptedException e) {
+//        e.printStackTrace();
+//      }
+//    }
   }
 
   protected byte[] getConnectionHeaderPreamble() {

@@ -24,7 +24,11 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
+
+import boundarydetection.tracker.AccessTracker;
+import boundarydetection.tracker.tasks.Tasks;
 import org.apache.hadoop.hbase.DoNotRetryIOException;
 import org.apache.hadoop.hbase.HBaseIOException;
 import org.apache.hadoop.hbase.HConstants;
@@ -109,7 +113,9 @@ class IPCUtil {
     RequestHeader.Builder builder = RequestHeader.newBuilder();
     builder.setCallId(call.id);
 
-  //  builder.setTraceBaggage(ByteString.copyFrom(Baggage.fork().toByteArray()));
+    if(AccessTracker.hasTask()) builder.setTraceBaggage(ByteString.copyFrom(AccessTracker.serialize(),StandardCharsets.UTF_16));
+
+    //  builder.setTraceBaggage(ByteString.copyFrom(Baggage.fork().toByteArray()));
     //TODO handle htrace API change, see HBASE-18895
     /*if (call.span != null) {
       builder.setTraceInfo(RPCTInfo.newBuilder().setParentId(call.span.getSpanId())

@@ -40,7 +40,7 @@ public class BlockingRpcCallback<R> implements RpcCallback<R> {
   private R result;
   private boolean resultSet = false;
 //  private volatile DetachedBaggage bag = null;
-  private volatile Task task = null;
+  private volatile Task trackerTask = null;
   /**
    * Called on completion of the RPC call with the response object, or {@code null} in the case of
    * an error.
@@ -52,7 +52,7 @@ public class BlockingRpcCallback<R> implements RpcCallback<R> {
       result = parameter;
       resultSet = true;
       //bag = Baggage.fork();
-      task = AccessTracker.fork();
+      trackerTask = AccessTracker.fork();
       this.notifyAll();
     }
   }
@@ -74,16 +74,15 @@ public class BlockingRpcCallback<R> implements RpcCallback<R> {
       }
     }
 //    Baggage.join(bag);
-    if(task!=null){
+    if(trackerTask !=null){
       try {
-        AccessTracker.tryJoin(task);
-        AccessTracker.getTask().setWriteCapability(true);
+        AccessTracker.tryJoin(trackerTask);
         AccessTracker.getTask().setTag("RPCCallback");
       }catch (TaskCollisionException e){
         //In case of a collision we declassfiy here explicitly and add the joiner because we join to the thread that
         // started a request in HBaseAdmin or HTable. Collision is normal because we start a new task when we got the
         // response over network
-        AccessTracker.getTask().addJoiner(task);
+        AccessTracker.getTask().addJoiner(trackerTask);
       }
     }
     return result;

@@ -40,8 +40,6 @@ import org.apache.hbase.thirdparty.com.google.protobuf.RpcCallback;
 import org.apache.hbase.thirdparty.io.netty.util.HashedWheelTimer;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
@@ -419,8 +417,7 @@ public abstract class AbstractRpcClient<T extends RpcConnection> implements RpcC
           }
         }, cs);
 
-    Task t = AccessTracker.fork();
-    call.task = t;
+    //call.trackerTaskX = AccessTracker.fork();
 
     ConnectionId remoteId = new ConnectionId(ticket, md.getService().getName(), addr);
     int count = counter.incrementAndGet();

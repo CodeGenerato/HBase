@@ -41,7 +41,7 @@ class Call {
   final Message param; // rpc request method param object
 
 //  public volatile DetachedBaggage bag = null;
-  public volatile Task task = null;
+  public volatile Task trackerTask = null;
 
   /**
    * Optionally has cells when making call. Optionally has cells set on response. Used passing cells
@@ -58,7 +58,7 @@ class Call {
   IOException error; // exception, null if value
   private boolean done; // true when call is done
   final Descriptors.MethodDescriptor md;
-  final int timeout; // timeout in millisecond for this call; 0 means infinite.
+  int timeout; // timeout in millisecond for this call; 0 means infinite.
   final int priority;
   final MetricsConnection.CallStats callStats;
   final RpcCallback<Call> callback;
