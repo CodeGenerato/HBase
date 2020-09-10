@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.hadoop.conf.Configuration;
@@ -172,7 +173,7 @@ public class RestoreSnapshotHelper {
    * @return the set of regions touched by the restore operation
    */
   public RestoreMetaChanges restoreHdfsRegions() throws IOException {
-    ThreadPoolExecutor exec = SnapshotManifest.createExecutor(conf, "RestoreSnapshot");
+    ExecutorService exec = SnapshotManifest.createExecutor(conf, "RestoreSnapshot");
     try {
       return restoreHdfsRegions(exec);
     } finally {
@@ -180,7 +181,7 @@ public class RestoreSnapshotHelper {
     }
   }
 
-  private RestoreMetaChanges restoreHdfsRegions(final ThreadPoolExecutor exec) throws IOException {
+  private RestoreMetaChanges restoreHdfsRegions(final ExecutorService exec) throws IOException {
     LOG.info("starting restore table regions using snapshot=" + snapshotDesc);
 
     Map<String, SnapshotRegionManifest> regionManifests = snapshotManifest.getRegionManifestsMap();
@@ -416,7 +417,7 @@ public class RestoreSnapshotHelper {
   /**
    * Remove specified regions from the file-system, using the archiver.
    */
-  private void removeHdfsRegions(final ThreadPoolExecutor exec, final List<RegionInfo> regions)
+  private void removeHdfsRegions(final ExecutorService exec, final List<RegionInfo> regions)
       throws IOException {
     if (regions == null || regions.isEmpty()) return;
     ModifyRegionUtils.editRegions(exec, regions, new ModifyRegionUtils.RegionEditTask() {
@@ -430,7 +431,7 @@ public class RestoreSnapshotHelper {
   /**
    * Restore specified regions by restoring content to the snapshot state.
    */
-  private void restoreHdfsRegions(final ThreadPoolExecutor exec,
+  private void restoreHdfsRegions(final ExecutorService exec,
       final Map<String, SnapshotRegionManifest> regionManifests,
       final List<RegionInfo> regions) throws IOException {
     if (regions == null || regions.isEmpty()) return;
@@ -445,7 +446,7 @@ public class RestoreSnapshotHelper {
   /**
    * Restore specified mob regions by restoring content to the snapshot state.
    */
-  private void restoreHdfsMobRegions(final ThreadPoolExecutor exec,
+  private void restoreHdfsMobRegions(final ExecutorService exec,
       final Map<String, SnapshotRegionManifest> regionManifests,
       final List<RegionInfo> regions) throws IOException {
     if (regions == null || regions.isEmpty()) return;
@@ -577,7 +578,7 @@ public class RestoreSnapshotHelper {
    * Clone specified regions. For each region create a new region
    * and create a HFileLink for each hfile.
    */
-  private RegionInfo[] cloneHdfsRegions(final ThreadPoolExecutor exec,
+  private RegionInfo[] cloneHdfsRegions(final ExecutorService exec,
       final Map<String, SnapshotRegionManifest> regionManifests,
       final List<RegionInfo> regions) throws IOException {
     if (regions == null || regions.isEmpty()) return null;

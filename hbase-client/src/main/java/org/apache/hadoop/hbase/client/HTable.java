@@ -124,6 +124,8 @@ public class HTable implements Table {
   private final boolean cleanupPoolOnClose; // shutdown the pool in close()
   private final HRegionLocator locator;
 
+  public boolean inShell = false;
+
   /** The Async process for batch */
   @VisibleForTesting
   AsyncProcess multiAp;
@@ -504,19 +506,24 @@ public class HTable implements Table {
 
   @Override
   public void delete(final Delete delete) throws IOException {
-       ClientServiceCallable<Void> callable =
-        new ClientServiceCallable<Void>(this.connection, getName(), delete.getRow(),
-            this.rpcControllerFactory.newController(), delete.getPriority()) {
-      @Override
-      protected Void rpcCall() throws Exception {
-        MutateRequest request = RequestConverter
-            .buildMutateRequest(getLocation().getRegionInfo().getRegionName(), delete);
-        doMutate(request);
-        return null;
-      }
-    };
-    rpcCallerFactory.<Void>newCaller(this.writeRpcTimeoutMs)
-        .callWithRetries(callable, this.operationTimeoutMs);
+    if(inShell) AccessTracker.startTask("DELETE_ClientStart");
+    try {
+      ClientServiceCallable<Void> callable =
+              new ClientServiceCallable<Void>(this.connection, getName(), delete.getRow(),
+                      this.rpcControllerFactory.newController(), delete.getPriority()) {
+                @Override
+                protected Void rpcCall() throws Exception {
+                  MutateRequest request = RequestConverter
+                          .buildMutateRequest(getLocation().getRegionInfo().getRegionName(), delete);
+                  doMutate(request);
+                  return null;
+                }
+              };
+      rpcCallerFactory.<Void>newCaller(this.writeRpcTimeoutMs)
+              .callWithRetries(callable, this.operationTimeoutMs);
+    }finally {
+      AccessTracker.stopTask();
+    }
   }
 
   @Override
@@ -544,11 +551,8 @@ public class HTable implements Table {
 
   @Override
   public void put(final Put put) throws IOException {
-   //AccessTracker.enableAutoTaskInheritance();
-   //AccessTracker.enableEventLogging();
-   //AccessTracker.resetTracking();
-   //AccessTracker.startTask();
-
+    if(inShell) AccessTracker.startTask("PUT_ClientStart");
+    try {
     validatePut(put);
     ClientServiceCallable<Void> callable =
         new ClientServiceCallable<Void>(this.connection, getName(), put.getRow(),
@@ -563,7 +567,9 @@ public class HTable implements Table {
     };
     rpcCallerFactory.<Void> newCaller(this.writeRpcTimeoutMs).callWithRetries(callable,
         this.operationTimeoutMs);
-   // AccessTracker.stopTask();
+    } finally {
+      AccessTracker.stopTask();
+    }
   }
 
   @Override

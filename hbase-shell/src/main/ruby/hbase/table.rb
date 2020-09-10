@@ -116,6 +116,7 @@ EOF
 
     def initialize(table, shell)
       @table = table
+      @table.inShell = true
       @name = @table.getName.getNameAsString
       @shell = shell
       @converters = {}

@@ -18,6 +18,8 @@
  */
 package org.apache.hadoop.hbase.regionserver.wal;
 
+import boundarydetection.tracker.AccessTracker;
+import boundarydetection.tracker.tasks.Task;
 import org.apache.yetus.audience.InterfaceAudience;
 
 
@@ -43,6 +45,7 @@ final class RingBufferTruck {
    */
   private SyncFuture sync;
   private FSWALEntry entry;
+  public Task trackerTask;
 
   /**
    * Load the truck with a {@link FSWALEntry}.
@@ -50,6 +53,7 @@ final class RingBufferTruck {
   void load(FSWALEntry entry) {
     this.entry = entry;
     this.type = Type.APPEND;
+    trackerTask = AccessTracker.fork();
    // entry.bag = Baggage.fork();
   }
 
@@ -77,6 +81,12 @@ final class RingBufferTruck {
     this.entry = null;
     this.type = Type.EMPTY;
     return entry;
+  }
+
+  Task unloadTrackerTask() {
+    Task t = trackerTask;
+    trackerTask = null;
+    return t;
   }
 
   /**

@@ -17,6 +17,7 @@
  */
 package org.apache.hadoop.hbase.ipc;
 
+import boundarydetection.tracker.AccessTracker;
 import org.apache.hbase.thirdparty.io.netty.buffer.Unpooled;
 import org.apache.hbase.thirdparty.io.netty.channel.ChannelHandlerContext;
 import org.apache.hbase.thirdparty.io.netty.channel.ChannelOutboundHandlerAdapter;
@@ -40,17 +41,32 @@ class NettyRpcServerResponseEncoder extends ChannelOutboundHandlerAdapter {
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
       throws Exception {
-    if (msg instanceof RpcResponse) {
-      RpcResponse resp = (RpcResponse) msg;
-      BufferChain buf = resp.getResponse();
-      ctx.write(Unpooled.wrappedBuffer(buf.getBuffers()), promise).addListener(f -> {
-        resp.done();
-        if (f.isSuccess()) {
-          metrics.sentBytes(buf.size());
-        }
-      });
-    } else {
-      ctx.write(msg, promise);
+
+    boolean joined = false;
+    if (msg instanceof Call) {
+      Call c = (Call) msg;
+      if (c.trackerTask != null) {
+        AccessTracker.join(c.trackerTask);
+        AccessTracker.getTask().setWriteCapability(false);
+        joined = true;
+        // we do not further follow lib internals, this is just for auto eliminating covered ITCs
+      }
+    }
+    try {
+      if (msg instanceof RpcResponse) {
+        RpcResponse resp = (RpcResponse) msg;
+        BufferChain buf = resp.getResponse();
+        ctx.write(Unpooled.wrappedBuffer(buf.getBuffers()), promise).addListener(f -> {
+          resp.done();
+          if (f.isSuccess()) {
+            metrics.sentBytes(buf.size());
+          }
+        });
+      } else {
+        ctx.write(msg, promise);
+      }
+    } finally {
+      if (joined) AccessTracker.discard();
     }
   }
 }

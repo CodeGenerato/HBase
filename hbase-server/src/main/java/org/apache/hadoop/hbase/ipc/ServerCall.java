@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import boundarydetection.tracker.AccessTracker;
+import boundarydetection.tracker.tasks.Task;
 import boundarydetection.tracker.tasks.Tasks;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.hadoop.hbase.CellScanner;
@@ -96,6 +97,8 @@ public abstract class ServerCall<T extends ServerRpcConnection> implements RpcCa
   // cumulative size of serialized exceptions
   private long exceptionSize = 0;
   private final boolean retryImmediatelySupported;
+
+  public Task trackerTask; // for Response
 
   // This is a dirty hack to address HBASE-22539. The lowest bit is for normal rpc cleanup, and the
   // second bit is for WAL reference. We can only call release if both of them are zero. The reason
@@ -230,9 +233,11 @@ public abstract class ServerCall<T extends ServerRpcConnection> implements RpcCa
     BufferChain bc = null;
     try {
       ResponseHeader.Builder headerBuilder = ResponseHeader.newBuilder();
-      // Call id.
       headerBuilder.setCallId(this.id);
-      if(AccessTracker.hasTask()) headerBuilder.setTraceBaggage(ByteString.copyFrom(AccessTracker.serialize(),StandardCharsets.UTF_16));
+      if(AccessTracker.hasTask()){
+        trackerTask = AccessTracker.fork();
+        headerBuilder.setTraceBaggage(ByteString.copyFrom(AccessTracker.serialize(),StandardCharsets.UTF_16));
+      }
       //headerBuilder.setTraceBaggage(ByteString.copyFrom(Baggage.fork().toByteArray()));
       if (t != null) {
         setExceptionResponse(t, errorMsg, headerBuilder);

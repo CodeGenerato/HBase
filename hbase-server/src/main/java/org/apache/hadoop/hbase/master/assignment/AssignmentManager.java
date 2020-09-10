@@ -36,6 +36,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import boundarydetection.tracker.AccessTracker;
+import boundarydetection.tracker.tasks.Task;
+import boundarydetection.tracker.tasks.TaskCollisionException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseIOException;
 import org.apache.hadoop.hbase.HConstants;
@@ -1663,12 +1665,18 @@ public class AssignmentManager implements ServerListener {
       assignQueueFullCond.await(assignDispatchWaitMillis, TimeUnit.MILLISECONDS);
       regions = new HashMap<RegionInfo, RegionStateNode>(pendingAssignQueue.size());
       for (RegionStateNode regionNode: pendingAssignQueue) {
-        if (regionNode.trackerTask != null) {
-          boolean hasTask = AccessTracker.hasTask(); // join should return a boolean saying if task was already present
-          AccessTracker.join(regionNode.trackerTask);
-          if (!hasTask) {
+        Task trackerTask = regionNode.trackerTask;
+        try {
+          if (trackerTask != null) {
+            AccessTracker.tryJoin(trackerTask);
             AccessTracker.getTask().setTag("ProcessAssignments");
           }
+        } catch (TaskCollisionException e) {
+          // If several regions are opened by different traces collisions occur.
+          // In case of a collision we catch and thereby declassfiy explicitly.
+          // We merge all trace parents into one across traces,
+          // similar like having one multi parent span in batching scenarios.
+          AccessTracker.getTask().addJoiner(trackerTask);
         }
         regions.put(regionNode.getRegionInfo(), regionNode);
       }

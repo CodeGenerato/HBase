@@ -24,14 +24,10 @@ import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import boundarydetection.tracker.AccessTracker;
+import boundarydetection.tracker.preinstrumented.TrackingExecutorService;
 import boundarydetection.tracker.tasks.Task;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -111,7 +107,7 @@ public abstract class ModifyRegionUtils {
       final RegionFillTask task) throws IOException {
     if (newRegions == null) return null;
     int regionNumber = newRegions.length;
-    ThreadPoolExecutor exec = getRegionOpenAndInitThreadPool(conf,
+    ExecutorService exec = getRegionOpenAndInitThreadPool(conf,
         "RegionOpenAndInitThread-" + tableDescriptor.getTableName(), regionNumber);
     try {
       return createRegions(exec, conf, rootDir, tableDescriptor, newRegions, task);
@@ -132,7 +128,7 @@ public abstract class ModifyRegionUtils {
    * @param task {@link RegionFillTask} custom code to populate region after creation
    * @throws IOException
    */
-  public static List<RegionInfo> createRegions(final ThreadPoolExecutor exec,
+  public static List<RegionInfo> createRegions(final ExecutorService exec,
                                                 final Configuration conf, final Path rootDir,
                                                 final TableDescriptor tableDescriptor, final RegionInfo[] newRegions,
                                                 final RegionFillTask task) throws IOException {
@@ -141,14 +137,11 @@ public abstract class ModifyRegionUtils {
     CompletionService<RegionInfo> completionService = new ExecutorCompletionService<>(exec);
     List<RegionInfo> regionInfos = new ArrayList<>();
     for (final RegionInfo newRegion : newRegions) {
-     Task t = AccessTracker.fork(); //TODO general solution for completionService
+      //Is instrumented via preinstrumented execution service
       completionService.submit(new Callable<RegionInfo>() {
         @Override
         public RegionInfo call() throws IOException {
-          AccessTracker.join(t);
-          AccessTracker.getTask().setTag("CreateRegions");
           RegionInfo m = createRegion(conf, rootDir, tableDescriptor, newRegion, task);
-          AccessTracker.discard();
           return m;
         }
       });
@@ -205,19 +198,15 @@ public abstract class ModifyRegionUtils {
    * @param task {@link RegionFillTask} custom code to edit the region
    * @throws IOException
    */
-  public static void editRegions(final ThreadPoolExecutor exec,
+  public static void editRegions(final ExecutorService exec,
       final Collection<RegionInfo> regions, final RegionEditTask task) throws IOException {
     final ExecutorCompletionService<Void> completionService = new ExecutorCompletionService<>(exec);
     for (final RegionInfo hri: regions) {
+      //Instrumented via executorService
       completionService.submit(new Callable<Void>() {
         @Override
         public Void call() throws IOException {
-//          AccessTracker.enableAutoTaskInheritance();
-//          AccessTracker.enableEventLogging();
-//          AccessTracker.resetTracking();
-//          AccessTracker.startTask();
           task.editRegion(hri);
-//          AccessTracker.stopTask();
           return null;
         }
       });
@@ -240,13 +229,12 @@ public abstract class ModifyRegionUtils {
    * used by createRegions() to get the thread pool executor based on the
    * "hbase.hregion.open.and.init.threads.max" property.
    */
-  static ThreadPoolExecutor getRegionOpenAndInitThreadPool(final Configuration conf,
+  static ExecutorService getRegionOpenAndInitThreadPool(final Configuration conf,
       final String threadNamePrefix, int regionNumber) {
     int maxThreads = Math.min(regionNumber, conf.getInt(
         "hbase.hregion.open.and.init.threads.max", 16));
-    ThreadPoolExecutor regionOpenAndInitThreadPool = Threads
+    return new TrackingExecutorService( Threads
     .getBoundedCachedThreadPool(maxThreads, 30L, TimeUnit.SECONDS,
-        Threads.newDaemonThreadFactory(threadNamePrefix));
-    return regionOpenAndInitThreadPool;
+        Threads.newDaemonThreadFactory(threadNamePrefix)));
   }
 }

@@ -23,6 +23,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import boundarydetection.tracker.AccessTracker;
+import boundarydetection.tracker.tasks.Task;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.io.ByteArrayOutputStream;
@@ -103,13 +105,21 @@ public class WrapperAsyncFSOutput implements AsyncFSOutput {
 
   @Override
   public CompletableFuture<Long> flush(boolean sync) {
+    // Is indirectly caused by AsyncFSWAL.sync(AsyncFSWAL.java:355)
     CompletableFuture<Long> future = new CompletableFuture<>();
     ByteArrayOutputStream buffer = this.buffer;
     this.buffer = new ByteArrayOutputStream();
-   // DetachedBaggage bag = Baggage.fork();
-    executor.execute(() ->{
-    //Baggage.start(bag);
-    flush0(future, buffer, sync);
+    Task trackerTask = AccessTracker.fork();
+    // DetachedBaggage bag = Baggage.fork();
+    // This is the only use of executor
+    executor.execute(() -> {
+      AccessTracker.join(trackerTask, "FlushFS");
+      try {
+        //Baggage.start(bag);
+        flush0(future, buffer, sync);
+      } finally {
+        AccessTracker.discard();
+      }
     });
     return future;
   }

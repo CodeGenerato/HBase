@@ -623,9 +623,8 @@ public class HBaseAdmin implements Admin {
   @Override
   public void createTable(final TableDescriptor desc, byte [][] splitKeys)
       throws IOException {
+    AccessTracker.startTask("CreateTable_ClientStart");
     try {
-      AccessTracker.resetTracking();
-      AccessTracker.startTask("CreateTable_ClientStart");
       get(createTableAsync(desc, splitKeys), syncWaitTimeout, TimeUnit.MILLISECONDS);
     } finally {
       AccessTracker.stopTask();
@@ -703,7 +702,12 @@ public class HBaseAdmin implements Admin {
 
   @Override
   public void deleteTable(final TableName tableName) throws IOException {
+    AccessTracker.startTask("DeleteTable_ClientStart");
+    try {
       get(deleteTableAsync(tableName), syncWaitTimeout, TimeUnit.MILLISECONDS);
+    } finally {
+      AccessTracker.stopTask();
+    }
   }
 
   @Override
@@ -915,7 +919,12 @@ public class HBaseAdmin implements Admin {
   @Override
   public void disableTable(final TableName tableName)
   throws IOException {
-    get(disableTableAsync(tableName), syncWaitTimeout, TimeUnit.MILLISECONDS);
+    AccessTracker.startTask("DisableTable_ClientStart");
+    try {
+      get(disableTableAsync(tableName), syncWaitTimeout, TimeUnit.MILLISECONDS);
+    } finally {
+      AccessTracker.stopTask();
+    }
   }
 
   @Override

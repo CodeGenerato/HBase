@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.hadoop.hbase.ServerName;
@@ -96,7 +97,7 @@ public class DisabledTableSnapshotHandler extends TakeSnapshotHandler {
       LOG.info(msg);
       status.setStatus(msg);
 
-      ThreadPoolExecutor exec = SnapshotManifest.createExecutor(conf, "DisabledTableSnapshot");
+      ExecutorService exec = SnapshotManifest.createExecutor(conf, "DisabledTableSnapshot");
       try {
         ModifyRegionUtils.editRegions(exec, regions, new ModifyRegionUtils.RegionEditTask() {
           @Override

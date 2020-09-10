@@ -74,17 +74,7 @@ public class BlockingRpcCallback<R> implements RpcCallback<R> {
       }
     }
 //    Baggage.join(bag);
-    if(trackerTask !=null){
-      try {
-        AccessTracker.tryJoin(trackerTask);
-        AccessTracker.getTask().setTag("RPCCallback");
-      }catch (TaskCollisionException e){
-        //In case of a collision we declassfiy here explicitly and add the joiner because we join to the thread that
-        // started a request in HBaseAdmin or HTable. Collision is normal because we start a new task when we got the
-        // response over network
-        AccessTracker.getTask().addJoiner(trackerTask);
-      }
-    }
+    AccessTracker.join(trackerTask,"RPCCallback");
     return result;
   }
 }

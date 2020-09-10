@@ -25,9 +25,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import boundarydetection.tracker.preinstrumented.TrackingExecutorService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -365,7 +367,7 @@ public final class SnapshotManifest {
     switch (getSnapshotFormat(desc)) {
       case SnapshotManifestV1.DESCRIPTOR_VERSION: {
         this.htd = FSTableDescriptors.getTableDescriptorFromFs(fs, workingDir);
-        ThreadPoolExecutor tpool = createExecutor("SnapshotManifestLoader");
+        ExecutorService tpool = createExecutor("SnapshotManifestLoader");
         try {
           this.regionManifests =
             SnapshotManifestV1.loadRegionManifests(conf, tpool, fs, workingDir, desc);
@@ -383,7 +385,7 @@ public final class SnapshotManifest {
           // Compatibility, load the v1 regions
           // This happens only when the snapshot is in-progress and the cache wants to refresh.
           List<SnapshotRegionManifest> v1Regions, v2Regions;
-          ThreadPoolExecutor tpool = createExecutor("SnapshotManifestLoader");
+          ExecutorService tpool = createExecutor("SnapshotManifestLoader");
           try {
             v1Regions = SnapshotManifestV1.loadRegionManifests(conf, tpool, fs, workingDir, desc);
             v2Regions = SnapshotManifestV2.loadRegionManifests(conf, tpool, fs, workingDir, desc,
@@ -475,7 +477,7 @@ public final class SnapshotManifest {
   private void convertToV2SingleManifest() throws IOException {
     // Try to load v1 and v2 regions
     List<SnapshotRegionManifest> v1Regions, v2Regions;
-    ThreadPoolExecutor tpool = createExecutor("SnapshotManifestLoader");
+    ExecutorService tpool = createExecutor("SnapshotManifestLoader");
     try {
       v1Regions = SnapshotManifestV1.loadRegionManifests(conf, tpool, fs, workingDir, desc);
       v2Regions = SnapshotManifestV2.loadRegionManifests(conf, tpool, fs, workingDir, desc,
@@ -551,15 +553,15 @@ public final class SnapshotManifest {
     }
   }
 
-  private ThreadPoolExecutor createExecutor(final String name) {
+  private ExecutorService createExecutor(final String name) {
     return createExecutor(conf, name);
   }
 
-  public static ThreadPoolExecutor createExecutor(final Configuration conf, final String name) {
-    //TODO THREADPOOL
+  public static ExecutorService createExecutor(final Configuration conf, final String name) {
     int maxThreads = conf.getInt("hbase.snapshot.thread.pool.max", 8);
-    return Threads.getBoundedCachedThreadPool(maxThreads, 30L, TimeUnit.SECONDS,
-              Threads.newDaemonThreadFactory(name));
+    // only used for snapshotting and not explicitly revealed by investigation, because no according operation called
+    return new TrackingExecutorService(Threads.getBoundedCachedThreadPool(maxThreads, 30L, TimeUnit.SECONDS,
+              Threads.newDaemonThreadFactory(name)));
   }
 
   /**

@@ -2060,7 +2060,6 @@ public class ProcedureExecutor<TEnvironment> {
             LOG.info("ASSERT pid=" + proc.getProcId(), e);
             throw e;
           } finally {
-            proc.trackerTask = AccessTracker.fork();
             AccessTracker.discard();
             procExecutionLock.releaseLockEntry(lockEntry);
             activeCount = activeExecutorCount.decrementAndGet();

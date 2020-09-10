@@ -20,6 +20,8 @@ package org.apache.hadoop.hbase.regionserver.wal;
 import static org.apache.hadoop.hbase.util.FutureUtils.addListener;
 
 import boundarydetection.tracker.AccessTracker;
+import boundarydetection.tracker.tasks.Task;
+import boundarydetection.tracker.tasks.TaskCollisionException;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.Sequence;
 import com.lmax.disruptor.Sequencer;
@@ -507,19 +509,6 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
     // because many requests are flushed together, we can only track the start and end event but not the actual file write
     // a file write cannot be associated with one request
     consumeLock.lock();
-    // XTRACE this is a hack to keep everything on one trace
-//    if(bag==null) {
-//      XTrace.startTask(true);
-//      XTraceUtil.getDebugLogger().tag("Batched WAL OP", "Batched WAL OP");
-     // bag = Baggage.fork();
-//      AccessTracker.enableAutoTaskInheritance();
-//      AccessTracker.enableEventLogging();
-//      AccessTracker.resetTracking();
-//      AccessTracker.startTask();
-    //}
-    //else{
-//      Baggage.join(bag);
-    //}
     XTraceUtil.getDebugLogger().log("consume start");
 
     try {
@@ -552,6 +541,17 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
         switch (truck.type()) {
           case APPEND:
             toWriteAppends.addLast(truck.unloadAppend());
+            Task trackerTask = truck.unloadTrackerTask();
+            try {
+              if (trackerTask != null) {
+                AccessTracker.tryJoin(trackerTask);
+                AccessTracker.getTask().setTag("AppendFSWAL");
+              }
+            } catch (TaskCollisionException e) {
+              // Because of the batching schema, different writes to the WAL can join here.
+              // In case of a collision we catch and thereby declassfiy explicitly. We merge different traces here.
+              AccessTracker.getTask().addJoiner(trackerTask);
+            }
             break;
           case SYNC:
             syncFutures.add(truck.unloadSync());
@@ -562,39 +562,42 @@ public class AsyncFSWAL extends AbstractFSWAL<AsyncWriter> {
         }
         waitingConsumePayloadsGatingSequence.set(nextCursor);
       }
-      appendAndSync();
-      if (hasConsumerTask.get()) {
-        return;
-      }
-      if (toWriteAppends.isEmpty()) {
-        if (waitingConsumePayloadsGatingSequence.get() == waitingConsumePayloads.getCursor()) {
-          consumerScheduled.set(false);
-          // TODO HBASE bad code! use a lock here!
-          // recheck here since in append and sync we do not hold the consumeLock. Thing may
-          // happen like
-          // 1. we check cursor, no new entry
-          // 2. someone publishes a new entry to ringbuffer and the consumerScheduled is true and
-          // give up scheduling the consumer task.
-          // 3. we set consumerScheduled to false and also give up scheduling consumer task.
+      try {
+        appendAndSync();
+        if (hasConsumerTask.get()) {
+          return;
+        }
+        if (toWriteAppends.isEmpty()) {
           if (waitingConsumePayloadsGatingSequence.get() == waitingConsumePayloads.getCursor()) {
-            // we will give up consuming so if there are some unsynced data we need to issue a sync.
-            if (writer.getLength() > fileLengthAtLastSync && !syncFutures.isEmpty() &&
-                    syncFutures.last().getTxid() > highestProcessedAppendTxidAtLastSync) {
-              // no new data in the ringbuffer and we have at least one sync request
-              sync(writer);
-            }
-            return;
-          } else {
-            // maybe someone has grabbed this before us
-            if (!consumerScheduled.compareAndSet(false, true)) {
+            consumerScheduled.set(false);
+            // TODO HBASE bad code! use a lock here!
+            // recheck here since in append and sync we do not hold the consumeLock. Thing may
+            // happen like
+            // 1. we check cursor, no new entry
+            // 2. someone publishes a new entry to ringbuffer and the consumerScheduled is true and
+            // give up scheduling the consumer task.
+            // 3. we set consumerScheduled to false and also give up scheduling consumer task.
+            if (waitingConsumePayloadsGatingSequence.get() == waitingConsumePayloads.getCursor()) {
+              // we will give up consuming so if there are some unsynced data we need to issue a sync.
+              if (writer.getLength() > fileLengthAtLastSync && !syncFutures.isEmpty() &&
+                      syncFutures.last().getTxid() > highestProcessedAppendTxidAtLastSync) {
+                // no new data in the ringbuffer and we have at least one sync request
+                sync(writer);
+              }
               return;
+            } else {
+              // maybe someone has grabbed this before us
+              if (!consumerScheduled.compareAndSet(false, true)) {
+                return;
+              }
             }
           }
         }
+      }finally {
+        AccessTracker.discard();
       }
-
-      // reschedule if we still have something to write.
-      consumeExecutor.execute(consumer);
+        // reschedule if we still have something to write.
+        consumeExecutor.execute(consumer);
 
   }
 
